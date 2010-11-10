@@ -9,34 +9,11 @@
 // Written by Jens Skovgaard Olsen (info@feischmeckerfoosball.com)
 // 
 
-#include <usb.h>
-#include <stdio.h>
-
-#define MY_VID 0x07CF
-#define MY_PID 0x1023
-
-#define EP_IN 0x81
-#define EP_OUT 0x02
-#define EP_INT 0x83
-
-#define BUF_SIZE 512
-#define IMG_BUF_SIZE 65536
-#define TIME_OUT 3500
+#include "exf1ctrl.h"
 
 usb_dev_handle *dev = NULL;
 char tmp[BUF_SIZE];
 char img[IMG_BUF_SIZE];
-
-usb_dev_handle *open_dev(void);
-int bulk_write(char tx_buffer[], char tx_size, char no_reads, int line_no); 
-int string_match(char s1[], char s2[], int length); 
-
-int init_camera(void); 
-void half_shutter(void); 
-void shutter(char filename[], char thumbnail[]); 
-void terminate_camera(void); 
-void setup_prerecord_movie_hs(void); 
-void movie(char filename[], int delay); 
 
 usb_dev_handle *open_dev(void)
 {
@@ -124,34 +101,43 @@ int init_camera(void)
   if (usb_control_msg(dev, 0xA1, 0x67, 0x00, 0x00, &tmp[0], 0x0400, TIME_OUT) < 0)
       printf("error: cmd write 2 failed\n");      
 
-  bulk_write((char[]){0x0C, 0x00, 0x00, 0x00, 0x01, 0x00, 0x01, 0x10, 0xFF, 0xFF, 0xFF, 0xFF}, 12, 2, __LINE__); 
-  bulk_write((char[]){0x10, 0x00, 0x00, 0x00, 0x01, 0x00, 0x02, 0x10, 0x00, 0x00, 0x00, 0x00, 0x15, 0x06, 0x76, 0x19}, 16, 1, __LINE__); 
-  bulk_write((char[]){0x10, 0x00, 0x00, 0x00, 0x01, 0x00, 0x14, 0x10, 0x01, 0x00, 0x00, 0x00, 0x02, 0x50, 0x00, 0x00}, 16, 2, __LINE__); 
-  bulk_write((char[]){0x10, 0x00, 0x00, 0x00, 0x01, 0x00, 0x16, 0x10, 0x02, 0x00, 0x00, 0x00, 0x02, 0x50, 0x00, 0x00}, 16, 0, __LINE__); 
-  bulk_write((char[]){0x0E, 0x00, 0x00, 0x00, 0x02, 0x00, 0x16, 0x10, 0x02, 0x00, 0x00, 0x00, 0x01, 0x80}, 14, 1, __LINE__); 
+  usbCmdGen(0x1001, TWO_READS, 0, NULL);
+  usbCmdGen(0x1002, ONE_READ,  4, (char[]){0x15, 0x06, 0x76, 0x19});
+  usbCmdGen(0x1014, TWO_READS, 4, (char[]){0x02, 0x50, 0x00, 0x00});
+  usbCmdGen(0x1016, ONE_READ,  6, (char[]){0x02, 0x50, 0x00, 0x00, 0x01, 0x80});
 
   if (usb_interrupt_read(dev, EP_INT, tmp, 16, TIME_OUT) < 0)
       printf("error: interrupt read 2 failed\n");
 
   if (usb_interrupt_read(dev, EP_INT, tmp, 16, TIME_OUT) < 0)
       printf("error: interrupt read 3 failed\n");
-        
-//  if (usb_interrupt_read(dev, EP_INT, tmp, 16, TIME_OUT) < 0)
-//      printf("error: interrupt read 4 failed\n");
-        
-  bulk_write((char[]){0x0C, 0x00, 0x00, 0x00, 0x01, 0x00, 0x01, 0x10, 0x03, 0x00, 0x00, 0x00}, 12, 2, __LINE__); 
-  bulk_write((char[]){0x10, 0x00, 0x00, 0x00, 0x01, 0x00, 0x01, 0x90, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}, 16, 1, __LINE__); 
-  bulk_write((char[]){0x10, 0x00, 0x00, 0x00, 0x01, 0x00, 0x14, 0x10, 0x05, 0x00, 0x00, 0x00, 0x0A, 0x50, 0x00, 0x00}, 16, 2, __LINE__); 
-  bulk_write((char[]){0x10, 0x00, 0x00, 0x00, 0x01, 0x00, 0x14, 0x10, 0x06, 0x00, 0x00, 0x00, 0x0E, 0x50, 0x00, 0x00}, 16, 2, __LINE__); 
-  bulk_write((char[]){0x10, 0x00, 0x00, 0x00, 0x01, 0x00, 0x14, 0x10, 0x07, 0x00, 0x00, 0x00, 0x0D, 0xD0, 0x00, 0x00}, 16, 2, __LINE__); 
-  bulk_write((char[]){0x10, 0x00, 0x00, 0x00, 0x01, 0x00, 0x14, 0x10, 0x08, 0x00, 0x00, 0x00, 0x02, 0xD0, 0x00, 0x00}, 16, 2, __LINE__); 
   
+  usbCmdGen(0x1001, TWO_READS, 0, NULL);
+  usbCmdGen(0x9001, ONE_READ,  4, (char[]){0x00, 0x00, 0x00, 0x00});
+  usbCmdGen(0x1014, TWO_READS, 4, (char[]){0x0A, 0x50, 0x00, 0x00});
+  usbCmdGen(0x1014, TWO_READS, 4, (char[]){0x0E, 0x50, 0x00, 0x00});
+  usbCmdGen(0x1014, TWO_READS, 4, (char[]){0x0D, 0xD0, 0x00, 0x00});
+  usbCmdGen(0x1014, TWO_READS, 4, (char[]){0x02, 0xD0, 0x00, 0x00});
+
   return 1; 
 }
+
+/*  Command observations:
+ *  Byte 1-4   = Number of bytes in packet.
+ *  Byte 5-6   = Command idx. for broken up commands: 0x0001, 0x0002 ...
+ *  Byte 7-8   = Command. 
+ *  Byte 9-12  = Command number: 0x00000000 - 0xFFFFFFFF.
+ *  Byte 13-14 = Parameter 1.
+ *  Byte 15-16 = Parameter 2.
+ *  Byte 17-18 = Parameter 3.
+ *  Byte 19-20 = Parameter 4.
+ */
+// bulk_write((char[]){0x0C, 0x00, 0x00, 0x00, 0x01, 0x00, 0x29, 0x90, 0x0F, 0x00, 0x00, 0x00}, 12, 0, __LINE__);
 
 void half_shutter(void)
 {
   // half shutter
+//bulk_write((char[]){[Bytes in packet     ], [Cmd idx ], [Cmd     ], [Cmd number          ]}, 12, 0, __LINE__);
   bulk_write((char[]){0x0C, 0x00, 0x00, 0x00, 0x01, 0x00, 0x29, 0x90, 0x0F, 0x00, 0x00, 0x00}, 12, 0, __LINE__);  
 
   if (usb_interrupt_read(dev, EP_INT, tmp, 16, TIME_OUT) < 0)
@@ -234,7 +220,8 @@ void setup_prerecord_movie_hs(void)
    char bytes[2]; 
    
    bulk_write((char[]){0x0C, 0x00, 0x00, 0x00, 0x01, 0x00, 0x02, 0x90, 0x25, 0x00, 0x00, 0x00}, 12, 1, __LINE__); 
-   bulk_write((char[]){0x10, 0x00, 0x00, 0x00, 0x01, 0x00, 0x16, 0x10, 0x26, 0x00, 0x00, 0x00, 0x0B, 0xD0, 0x00, 0x00}, 16, 0, __LINE__); 
+   bulk_write((char[]){0x10, 0x00, 0x00, 0x00, 0x01, 0x00, 0x16, 0x10, 0x26, 0x00, 0x00, 0x00, 0x0B, 0xD0, 0x00, 0x00}, 16, 0, __LINE__);
+ //bulk_write((char[]){[Bytes in packet     ], [Cmd idx ], [Cmd     ], [Cmd number          ], [                    ]}, 16, 0, __LINE__);
    bulk_write((char[]){0x0E, 0x00, 0x00, 0x00, 0x02, 0x00, 0x16, 0x10, 0x26, 0x00, 0x00, 0x00, 0x02, 0x00}, 14, 1, __LINE__); 
    bulk_write((char[]){0x10, 0x00, 0x00, 0x00, 0x01, 0x00, 0x41, 0x90, 0x27, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00}, 16, 0, __LINE__); 
    
@@ -244,7 +231,7 @@ void setup_prerecord_movie_hs(void)
    if (usb_control_msg(dev, 0x82, 0x00, 0x00, 0x2, bytes, 0x2, TIME_OUT) < 0)
       printf("error: cmd write 2 failed\n");      
 
-   sleep(1); 
+   Sleep(1);
       
    if (usb_bulk_read(dev, EP_IN, tmp, BUF_SIZE, TIME_OUT) < 0)
       printf("error: bulk read 1 failed. \n");   
@@ -261,7 +248,7 @@ void setup_prerecord_movie_hs(void)
    if (usb_control_msg(dev, 0x82, 0x00, 0x00, 0x2, bytes, 0x2, TIME_OUT) < 0)
       printf("error: cmd write 4 failed\n");      
 
-   sleep(1);       
+   Sleep(1);
    if (usb_bulk_read(dev, EP_IN, tmp, BUF_SIZE, TIME_OUT) < 0)
       printf("error: bulk read 2 failed. \n");   
 
@@ -276,11 +263,11 @@ void movie(char filename[], int delay)
    bulk_write((char[]){0x0C, 0x00, 0x00, 0x00, 0x01, 0x00, 0x43, 0x90, 0x2C, 0x00, 0x00, 0x00}, 12, 1, __LINE__); 
    
    if (delay >= 0) 
-      sleep(delay); 
+      Sleep(delay);
    else 
       printf("> Press enter to stop recording... "), getchar(); 
 
-   sleep(2); 
+   Sleep(2);
    
    bulk_write((char[]){0x0C, 0x00, 0x00, 0x00, 0x01, 0x00, 0x44, 0x90, 0x2D, 0x00, 0x00, 0x00}, 12, 1, __LINE__); 
    bulk_write((char[]){0x0C, 0x00, 0x00, 0x00, 0x01, 0x00, 0x45, 0x90, 0x2E, 0x00, 0x00, 0x00}, 12, 2, __LINE__); 
@@ -318,6 +305,161 @@ void movie(char filename[], int delay)
       printf("error: cmd write 2 failed\n");   
 }
 
+/*  Command observations:
+ *  Byte 1-4   = Number of bytes in packet.
+ *  Byte 5-6   = Command idx. for broken up commands: 0x0001, 0x0002 ...
+ *  Byte 7-8   = Command.
+ *  Byte 9-12  = Command number: 0x00000000 - 0xFFFFFFFF.
+ *  Byte 13-14 = Parameter 1.
+ *  Byte 15-16 = Parameter 2.
+ *  Byte 17-18 = Parameter 3.
+ *  Byte 19-20 = Parameter 4.
+ */
+
+struct bulkPacket {
+    int packetSize;
+    short int packetIdx;
+    short int cmdId;
+    int packetNo;
+    int cmdPar;
+};
+
+unsigned int USB_CMD_ID = 0xFFFFFFFF; 
+
+//void usbCmdGen(short int cmdId, int cmdParameter, short int postCmdReads) {
+void usbCmdGen(short int cmd, short int postCmdReads, int nCmdParameters, char cmdParameters[]) {
+
+    int bytesRead = 0, packetSize = 12, i, cmdIndex = 1;
+    char cmdBuffer[20], *pCmdBuffer, *pCmdParameters;
+
+    if (nCmdParameters%4 == 0 || nCmdParameters > 4) {
+
+        // Calculate package size;
+        packetSize = 12 + 4*(int)(nCmdParameters / 4);
+        printf("PacketSize=%d\n", packetSize);
+
+        // Assuming big endianess here!
+        pCmdBuffer  = cmdBuffer;
+        pCmdBuffer += 0; SET_DWORD(pCmdBuffer, packetSize);   // Number of bytes in USB packet.
+        pCmdBuffer += 4; SET_WORD (pCmdBuffer, cmdIndex);     // Command index.
+        pCmdBuffer += 2; SET_WORD (pCmdBuffer, cmd);          // Command.
+        pCmdBuffer += 2; SET_DWORD(pCmdBuffer, USB_CMD_ID);   // Command number.
+        pCmdBuffer += 4;
+
+        pCmdParameters = cmdParameters;
+        for (i=12; i<packetSize; i++)
+            *(pCmdBuffer++) = *(pCmdParameters++);               // Command parameters.
+
+        for (i=0; i<packetSize; i++)
+            printf("%02X-", 0xFF & cmdBuffer[i]);
+        printf("\n");
+
+        if (usb_bulk_write(dev, EP_OUT, cmdBuffer, packetSize, TIME_OUT) != packetSize)
+            printf("Error: Bulk write failed for this command: %02C!\n", cmd);
+
+        cmdIndex++; 
+    }
+
+    if (nCmdParameters%4 == 2) {
+
+        // Calculate package size;
+        packetSize = 14;
+        printf("PacketSize=%d\n", packetSize);
+
+        // Assuming big endianess here!
+        pCmdBuffer  = cmdBuffer;
+        pCmdBuffer += 0; SET_DWORD(pCmdBuffer, packetSize);   // Number of bytes in USB packet.
+        pCmdBuffer += 4; SET_WORD (pCmdBuffer, cmdIndex);     // Command index.
+        pCmdBuffer += 2; SET_WORD (pCmdBuffer, cmd);          // Command.
+        pCmdBuffer += 2; SET_DWORD(pCmdBuffer, USB_CMD_ID);   // Command number.
+        pCmdBuffer += 4;
+
+        pCmdParameters = cmdParameters + nCmdParameters - 2;
+        for (i=12; i<packetSize; i++)
+            *(pCmdBuffer++) = *(pCmdParameters++);               // Command parameters.
+
+        for (i=0; i<packetSize; i++)
+            printf("%02X-", 0xFF & cmdBuffer[i]);
+        printf("\n");
+
+        if (usb_bulk_write(dev, EP_OUT, cmdBuffer, packetSize, TIME_OUT) != packetSize)
+            printf("Error: Bulk write failed for this command: %02C!\n", cmd);
+    }
+
+    for (i=0; i<postCmdReads; i++) {
+        bytesRead = usb_bulk_read(dev, EP_IN, tmp, BUF_SIZE, TIME_OUT);
+        if (bytesRead < 0)
+            printf("Error: Bulk read failed for this command: %02X!\n", cmd);
+    }
+
+    USB_CMD_ID++;
+}
+
+void setup_pc_monitor(void)
+{
+
+  usbCmdGen(0x9002, ONE_READ, 0, NULL);
+  usbCmdGen(0x1016, ONE_READ, 6, (char[]){0x01, 0xD0, 0x00, 0x00, 0x02, 0x00});
+  usbCmdGen(0x9001, NO_READS, 4, (char[]){0x00, 0x00, 0x00, 0x00});
+
+  printf("Cfg done\n");
+}
+
+
+int grap_pc_monitor_frame(char *jpg_img)
+{
+   int bytes_read = -1, bytes_copied = 0, frame_no = 0, jpg_size = -1;
+
+   do {
+        bytes_read = usb_bulk_read(dev, EP_IN, img, IMG_BUF_SIZE, TIME_OUT);
+        //printf("Bytes read=%d\n", bytes_read);
+   } while (bytes_read < 0);
+   
+    do {
+       frame_no = 0; 
+       do {
+            bytes_read = usb_interrupt_read(dev, EP_INT, tmp, 16, TIME_OUT);
+            //printf("Bytes read=%d\n", bytes_read);
+
+            if (bytes_read == 8) {
+               frame_no = GET_DWORD(tmp);
+               printf("Frame no.= %d\n", frame_no);
+            }
+        } while ((frame_no-1)%3 != 0);
+
+       printf("Get frame!\n");
+
+       usbCmdGen(0x9025, NO_READS, 4, (char[]){0x02, 0x00, 0x00, 0x10});
+       bytes_read = usb_bulk_read(dev, EP_IN, img, 512, TIME_OUT);
+
+   } while (bytes_read < 0);
+
+   memcpy(jpg_img, img+12, bytes_read-12);
+   bytes_copied = bytes_read;
+
+   jpg_size = GET_DWORD(img);
+   jpg_size -= 12; 
+
+   printf("JPG size = %d\n", jpg_size);
+
+   if (jpg_size > 0) {
+
+       int bytes_remaining = jpg_size - bytes_copied + 12;
+
+       do
+           bytes_read = usb_bulk_read(dev, EP_IN, jpg_img + bytes_copied - 12, 512 * ((int)(bytes_remaining/512)+1), TIME_OUT);
+       while (bytes_read < 0);
+       bytes_copied += bytes_read;
+       bytes_remaining -= bytes_read;
+
+   } else
+       printf("Error: Negative JPG size!\n");
+
+   return jpg_size;
+}
+
+
+/*
 int main(int argc, char** argv)
 {
    char i, input[64], com, name[32], tname[32];
@@ -327,49 +469,49 @@ int main(int argc, char** argv)
    printf(" ********************************************************************\n");
    printf(" *                                                                  *\n");
    printf(" *  ExF1Ctrl ver. 0.1                                               *\n");
-	printf(" *  -----------------                                               *\n");
-	printf(" *  This program is able to interface to the Casio EX-F1 over USB.  *\n");
-	printf(" *  Firmware rev. 1.10 is required and the camera must be put in    *\n");
-	printf(" *  remote control mode before being connected to the host.         *\n"); 
-	printf(" *  --                                                              *\n");
-	printf(" *  Jens Skovgaard Olsen                                            *\n");
-	printf(" *  info@feinschmeckerfoosball.com                                  *\n");
-	printf(" *                                                                  *\n");
-	printf(" ********************************************************************\n");
-	printf(" \n");
-	printf(" Hint: c [x] sets mode / movie mode (x = 1-9).\n");
-	printf("          1: Single shot (default).\n");
-	printf("          2: Continuous shutter.\n");
-	printf("          3: Prerecord still image.\n");
-	printf("          4: Movie (STD).\n");
-	printf("          5: Prerecord movie (STD).\n");
-	printf("          6: Movie (HD).\n");
-	printf("          7: Prerecord movie (HD).\n");
-	printf("          8: Movie (HS).\n");
-	printf("          9: Prerecord movie (HS).\n");
-	printf("\n");
-	printf(" Hint: e [x] sets exposure (x = 1-4).\n");
-	printf("          1: M.\n");
-	printf("          2: Auto (default).\n");
-	printf("          3: A.\n");
-	printf("          4: S.\n");
-	printf("\n");
-	printf(" Hint: f [x] sets focus (x = 1-4).\n");
+   printf(" *  -----------------                                               *\n");
+   printf(" *  This program is able to interface to the Casio EX-F1 over USB.  *\n");
+   printf(" *  Firmware rev. 1.10 is required and the camera must be put in    *\n");
+   printf(" *  remote control mode before being connected to the host.         *\n");
+   printf(" *  --                                                              *\n");
+   printf(" *  Jens Skovgaard Olsen                                            *\n");
+   printf(" *  info@feinschmeckerfoosball.com                                  *\n");
+   printf(" *                                                                  *\n");
+   printf(" ********************************************************************\n");
+   printf(" \n");
+   printf(" Hint: c [x] sets mode / movie mode (x = 1-9).\n");
+   printf("          1: Single shot (default).\n");
+   printf("          2: Continuous shutter.\n");
+   printf("          3: Prerecord still image.\n");
+   printf("          4: Movie (STD).\n");
+   printf("          5: Prerecord movie (STD).\n");
+   printf("          6: Movie (HD).\n");
+   printf("          7: Prerecord movie (HD).\n");
+   printf("          8: Movie (HS).\n");
+   printf("          9: Prerecord movie (HS).\n");
+   printf("\n");
+   printf(" Hint: e [x] sets exposure (x = 1-4).\n");
+   printf("          1: M.\n");
+   printf("          2: Auto (default).\n");
+   printf("          3: A.\n");
+   printf("          4: S.\n");
+   printf("\n");
+   printf(" Hint: f [x] sets focus (x = 1-4).\n");
    printf("          1: Auto (default).\n");	
    printf("          2: Macro.\n");
    printf("          3: Infinity.\n");
    printf("          4: Manual.\n");
    printf("\n");
-	printf(" Hint: h activates half-press.\n");
-	printf(" Hint: i activates interval shutter.\n");
+   printf(" Hint: h activates half-press.\n");
+   printf(" Hint: i activates interval shutter.\n");
    printf(" Hint: q quits this program.\n");
-	printf(" Hint: m [x [y]] records a x second long movie called y.\n");
-	printf(" Hint: s [x [y]] activates shutter and stores a picture called x\n");
-	printf("       and a thumbnail called y.\n");
+   printf(" Hint: m [x [y]] records a x second long movie called y.\n");
+   printf(" Hint: s [x [y]] activates shutter and stores a picture called x\n");
+   printf("       and a thumbnail called y.\n");
    printf("\n");
    printf("\n");
-	printf("> Initializing camera... \n");
-	fflush(stdout); 
+   printf("> Initializing camera... \n");
+   fflush(stdout);
 		   
    if (!init_camera())
      return 0; 
@@ -439,7 +581,7 @@ int main(int argc, char** argv)
     
    return 0;
 }
-
+*/
 void terminate_camera(void)
 {
   usb_release_interface(dev, 0);
