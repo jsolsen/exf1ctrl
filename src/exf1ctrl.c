@@ -37,17 +37,17 @@ usb_dev_handle *open_dev(void)
 int bulk_write(char tx_buffer[], char tx_size, char no_reads, int line_no)
 {
   char i;
-  int bytes_read = 0;
+  int bytesRead = 0;
   if (usb_bulk_write(dev, EP_OUT, tx_buffer, tx_size, TIME_OUT) != tx_size)
       printf("error: bulk write failed: %s @ line %d. \n", tx_buffer, line_no);
 
   for (i=0; i<no_reads; i++) 
   {
-     bytes_read = usb_bulk_read(dev, EP_IN, tmp + bytes_read, BUF_SIZE, TIME_OUT); 
-     if (bytes_read < 0)
+     bytesRead = usb_bulk_read(dev, EP_IN, tmp + bytesRead, BUF_SIZE, TIME_OUT);
+     if (bytesRead < 0)
         printf("error: bulk read %d failed @ line %d. \n", i, line_no);
   }
-  return bytes_read; 
+  return bytesRead;
 }
 
 int string_match(char s1[], char s2[], int length)
@@ -149,7 +149,7 @@ void half_shutter(void)
 void shutter(char filename[], char thumbnail[])
 {
    
-  int bytes_read = -1, transfer_jpg = 1; 
+  int bytesRead = -1, transfer_jpg = 1;
   FILE * pFile;
    
   bulk_write((char[]){0x0C, 0x00, 0x00, 0x00, 0x01, 0x00, 0x24, 0x90, 0x09, 0x00, 0x00, 0x00}, 12, 0, __LINE__);  
@@ -168,20 +168,20 @@ void shutter(char filename[], char thumbnail[])
   pFile = fopen (filename, "wb");  
   while (transfer_jpg) {
      
-     bytes_read = usb_bulk_read(dev, EP_IN, img, IMG_BUF_SIZE, TIME_OUT); 
+     bytesRead = usb_bulk_read(dev, EP_IN, img, IMG_BUF_SIZE, TIME_OUT);
   
-     if (bytes_read > 0) {
+     if (bytesRead > 0) {
      
          if (string_match((char[]){0x25, 0x90, 0x0C, 0x00, 0x00, 0x00}, img+6, 6) == 0) {
             printf("> Transferring %d bytes... \n", img[0] + (img[1] << 8) + (img[2] << 16) + (img[3] << 24)); 
-            fwrite(img+12, 1, bytes_read-12, pFile);      
+            fwrite(img+12, 1, bytesRead-12, pFile);
          }
          else if (string_match((char[]){0x18, 0x00, 0x00, 0x00, 0x03, 0x00, 0x01, 0x20, 0x0C, 0x00, 0x00, 0x00}, img, 12) == 0) {
             printf("> %s saved to disk. \n", filename); 
             transfer_jpg = 0;  
          }
          else
-            fwrite(img, 1, bytes_read, pFile);    
+            fwrite(img, 1, bytesRead, pFile);
      }
   }
   fclose (pFile);  
@@ -193,20 +193,20 @@ void shutter(char filename[], char thumbnail[])
   pFile = fopen (thumbnail, "wb");  
   while (transfer_jpg) {
      
-     bytes_read = usb_bulk_read(dev, EP_IN, img, BUF_SIZE, TIME_OUT); 
+     bytesRead = usb_bulk_read(dev, EP_IN, img, BUF_SIZE, TIME_OUT);
   
-     if (bytes_read > 0) {
+     if (bytesRead > 0) {
      
          if (string_match((char[]){0x26, 0x90, 0x0D, 0x00, 0x00, 0x00}, img+6, 6) == 0) {
             printf("> Transferring %d bytes... \n", img[0] + (img[1] << 8) + (img[2] << 16) + (img[3] << 24)); 
-            fwrite(img+12, 1, bytes_read-12, pFile);      
+            fwrite(img+12, 1, bytesRead-12, pFile);
          }
          else if (string_match((char[]){0x18, 0x00, 0x00, 0x00, 0x03, 0x00, 0x01, 0x20, 0x0D, 0x00, 0x00, 0x00}, img, 12) == 0) {
             printf("> %s saved to disk. \n", thumbnail); 
             transfer_jpg = 0;  
          }
          else
-            fwrite(img, 1, bytes_read, pFile);    
+            fwrite(img, 1, bytesRead, pFile);
      }
   }
   fclose (pFile);    
@@ -257,7 +257,7 @@ void setup_prerecord_movie_hs(void)
 void movie(char filename[], int delay)
 {
    char bytes[2]; 
-   int bytes_read = -1, transfer_mov = 1; 
+   int bytesRead = -1, transfer_mov = 1;
    FILE * pFile;
    
    bulk_write((char[]){0x0C, 0x00, 0x00, 0x00, 0x01, 0x00, 0x43, 0x90, 0x2C, 0x00, 0x00, 0x00}, 12, 1, __LINE__); 
@@ -277,21 +277,21 @@ void movie(char filename[], int delay)
    pFile = fopen (filename, "wb");  
    while (transfer_mov) {
      
-     bytes_read = usb_bulk_read(dev, EP_IN, img, IMG_BUF_SIZE, TIME_OUT); 
+     bytesRead = usb_bulk_read(dev, EP_IN, img, IMG_BUF_SIZE, TIME_OUT);
    
-     if (bytes_read > 0) {
+     if (bytesRead > 0) {
      
          if (string_match((char[]){0x25, 0x90, 0x30, 0x00, 0x00, 0x00}, img+6, 6) == 0) {
             printf("> Transferring %d bytes... \n", img[0] + (img[1] << 8) + (img[2] << 16) + (img[3] << 24)); 
             fflush(stdout); 
-            fwrite(img+12, 1, bytes_read-12, pFile);      
+            fwrite(img+12, 1, bytesRead-12, pFile);
          }
          else if (string_match((char[]){0x18, 0x00, 0x00, 0x00, 0x03, 0x00, 0x01, 0x20, 0x30, 0x00, 0x00, 0x00}, img, 12) == 0) {
             printf("> %s saved to disk. \n", filename); 
             transfer_mov = 0;  
          }
          else
-            fwrite(img, 1, bytes_read, pFile);    
+            fwrite(img, 1, bytesRead, pFile);
      }
    }
    fclose (pFile);  
@@ -355,7 +355,7 @@ void usbCmdGen(short int cmd, short int postCmdReads, int nCmdParameters, char c
         printf("\n");
 
         if (usb_bulk_write(dev, EP_OUT, cmdBuffer, packetSize, TIME_OUT) != packetSize)
-            printf("Error: Bulk write failed for this command: %02C!\n", cmd);
+            printf("Error: Bulk write failed for this command: %02X!\n", cmd);
 
         cmdIndex++; 
     }
@@ -383,7 +383,7 @@ void usbCmdGen(short int cmd, short int postCmdReads, int nCmdParameters, char c
         printf("\n");
 
         if (usb_bulk_write(dev, EP_OUT, cmdBuffer, packetSize, TIME_OUT) != packetSize)
-            printf("Error: Bulk write failed for this command: %02C!\n", cmd);
+            printf("Error: Bulk write failed for this command: %02X!\n", cmd);
     }
 
     for (i=0; i<postCmdReads; i++) {
@@ -405,57 +405,96 @@ void setup_pc_monitor(void)
   printf("Cfg done\n");
 }
 
+void exit_camera(void)
+{
+    usb_bulk_read(dev, EP_IN, tmp, BUF_SIZE, TIME_OUT);
+
+    if (usb_interrupt_read(dev, EP_INT, tmp, 16, TIME_OUT) < 0)
+        printf("error: interrupt read 1 failed\n");
+
+    if (usb_interrupt_read(dev, EP_INT, tmp, 16, TIME_OUT) < 0)
+        printf("error: interrupt read 1 failed\n");
+
+    usbCmdGen(0x9002, NO_READS, 0, NULL);
+
+    if (usb_interrupt_read(dev, EP_INT, tmp, 16, TIME_OUT) < 0)
+        printf("error: interrupt read 1 failed\n");
+
+    if (usb_interrupt_read(dev, EP_INT, tmp, 16, TIME_OUT) < 0)
+        printf("error: interrupt read 1 failed\n");
+
+    usb_bulk_read(dev, EP_IN, tmp, BUF_SIZE, TIME_OUT);
+
+    usbCmdGen(0x1016, ONE_READ, 6, (char[]){0x01, 0xD0, 0x00, 0x00, 0x01, 0x00});
+    usbCmdGen(0x9001, ONE_READ, 4, (char[]){0x00, 0x00, 0x00, 0x00});
+    usbCmdGen(0x9002, ONE_READ, 0, NULL);
+    usbCmdGen(0x1016, ONE_READ, 6, (char[]){0x02, 0x50, 0x00, 0x00, 0x00, 0x00});
+
+    if (usb_interrupt_read(dev, EP_INT, tmp, 16, TIME_OUT) < 0)
+        printf("error: interrupt read 1 failed\n");
+
+    if (usb_interrupt_read(dev, EP_INT, tmp, 16, TIME_OUT) < 0)
+        printf("error: interrupt read 1 failed\n");
+
+    usbCmdGen(0x1003, ONE_READ, 0, NULL);
+    
+    printf("Exit done\n");
+}
 
 int grap_pc_monitor_frame(char *jpg_img)
 {
-   int bytes_read = -1, bytes_copied = 0, frame_no = 0, jpg_size = -1;
+   int bytesRead = -1, bytesCopied = 0, frameNo = 0, jpgSize = -1;
 
    do {
-        bytes_read = usb_bulk_read(dev, EP_IN, img, IMG_BUF_SIZE, TIME_OUT);
-        //printf("Bytes read=%d\n", bytes_read);
-   } while (bytes_read < 0);
+        bytesRead = usb_bulk_read(dev, EP_IN, img, IMG_BUF_SIZE, TIME_OUT);
+        //printf("1. Bytes read=%d\n", bytesRead);
+   } while (bytesRead < 0);
    
     do {
-       frame_no = 0; 
+       frameNo = 0;
        do {
-            bytes_read = usb_interrupt_read(dev, EP_INT, tmp, 16, TIME_OUT);
-            //printf("Bytes read=%d\n", bytes_read);
+            bytesRead = usb_interrupt_read(dev, EP_INT, tmp, 16, TIME_OUT);
+            //printf("2. Bytes read=%d\n", bytesRead);
 
-            if (bytes_read == 8) {
-               frame_no = GET_DWORD(tmp);
-               printf("Frame no.= %d\n", frame_no);
+            if (bytesRead == 8) {
+               frameNo = GET_DWORD(tmp);
+               //printf("Frame no.= %d\n", frameNo);
             }
-        } while ((frame_no-1)%3 != 0);
+        } while ((frameNo-1)%3 != 0);
 
-       printf("Get frame!\n");
+       //printf("Get frame: %d!\n", frameNo);
 
        usbCmdGen(0x9025, NO_READS, 4, (char[]){0x02, 0x00, 0x00, 0x10});
-       bytes_read = usb_bulk_read(dev, EP_IN, img, 512, TIME_OUT);
+       bytesRead = usb_bulk_read(dev, EP_IN, img, 512, TIME_OUT);
+       //printf("3. Bytes read=%d\n", bytesRead);
 
-   } while (bytes_read < 0);
+   } while (bytesRead < 0);
 
-   memcpy(jpg_img, img+12, bytes_read-12);
-   bytes_copied = bytes_read;
+   memcpy(jpg_img, img+12, bytesRead-12);
+   bytesCopied = bytesRead;
 
-   jpg_size = GET_DWORD(img);
-   jpg_size -= 12; 
+   jpgSize = GET_DWORD(img);
+   jpgSize -= 12;
 
-   printf("JPG size = %d\n", jpg_size);
+   //printf("JPG size = %d ", jpgSize);
 
-   if (jpg_size > 0) {
+   if (jpgSize > 0) {
 
-       int bytes_remaining = jpg_size - bytes_copied + 12;
+       int bytesRemaining = jpgSize - bytesCopied + 12;
 
-       do
-           bytes_read = usb_bulk_read(dev, EP_IN, jpg_img + bytes_copied - 12, 512 * ((int)(bytes_remaining/512)+1), TIME_OUT);
-       while (bytes_read < 0);
-       bytes_copied += bytes_read;
-       bytes_remaining -= bytes_read;
+       do {
+           bytesRead = usb_bulk_read(dev, EP_IN, jpg_img + bytesCopied - 12, 512 * ((int)(bytesRemaining/512)+1), TIME_OUT);
+           //printf("4. Bytes read=%d\n", bytesRead);
+       } while (bytesRead < 0);
+       bytesCopied += bytesRead;
+       bytesRemaining -= bytesRead;
+       //printf("bytesCopied=%d bytesRemaining=%d\n", bytesCopied, bytesRemaining);
 
    } else
        printf("Error: Negative JPG size!\n");
 
-   return jpg_size;
+   //printf("Done!\n");
+   return jpgSize;
 }
 
 
