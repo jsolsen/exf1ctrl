@@ -12,6 +12,9 @@
 #include <stdio.h>
 #include <stdarg.h>
 
+#define TRUE      1
+#define FALSE     0 
+
 #define NO_READS  0
 #define ONE_READ  1
 #define TWO_READS 2
@@ -30,22 +33,120 @@
 #define IMG_BUF_SIZE 65536
 #define TIME_OUT 3500
 
-#define GET_WORD(ptr)  ((0xFF & *ptr) + ((0xFF & *(ptr+1)) << 8))
-#define GET_DWORD(ptr) ((0xFF & *ptr) + ((0xFF & *(ptr+1)) << 8) + ((0xFF & *(ptr+2)) << 16) + ((0xFF & *(ptr+3)) << 24))
+#define WORD                short unsigned int      // 16bits
+#define DWORD               unsigned int            // 32bits
+#define DDWORD              long unsigned int       // 64bits
+
+#define GET_WORD(ptr)  ((0xFF & *(ptr)) + ((0xFF & *(ptr+1)) << 8))
+#define GET_DWORD(ptr) ((0xFF & *(ptr)) + ((0xFF & *(ptr+1)) << 8) + ((0xFF & *(ptr+2)) << 16) + ((0xFF & *(ptr+3)) << 24))
 
 #define SET_WORD(ptr, val)  ({*ptr = (val & 0xFF); *(ptr+1) = (val & 0xFF00) >> 8;})
 #define SET_DWORD(ptr, val) ({*ptr = (val & 0xFF); *(ptr+1) = (val & 0xFF00) >> 8; *(ptr+2) = (val & 0xFF0000) >> 16; *(ptr+3) = (val & 0xFF000000) >> 24;})
 
+#define CMD_READ            0x1015
+#define CMD_WRITE           0x1016
+#define CMD_OK              0x2001
+
+#define CMD_STILL_START     0x9001
+#define CMD_STILL_STOP      0x9002
+
+#define CMD_MOVIE_START     0x9041
+#define CMD_MOVIE_STOP      0x9042
+
+#define CMD_TRANSFER        0x9025
+
+#define DATA_CAPTURE        0x0001
+#define DATA_MONITOR        0x0002
+
+// shutter  usbCmdGen(0x9024, NO_READS, 0, NULL);
+// movie    usbCmdGen(0x9044, NO_READS, 0, NULL);
+
+// get mov usbCmdGen(0x9025, NO_READS, 4, (char[]){0x01, 0x00, 0x00, 0x00});
+
+// Camera settings.
+
+#define ADDR_POWER          0x00005002
+#define ADDR_IMAGE_SIZE     0x00005003
+#define ADDR_QUALITY        0x00005004
+#define ADDR_WHITE_BALANCE  0x00005005
+#define ADDR_APERTURE       0x00005007
+#define ADDR_FOCUS          0x0000500A
+#define ADDR_METERING       0x0000500B
+#define ADDR_FLASH          0x0000500C
+#define ADDR_SHUTTER_SPEED  0x0000500D
+#define ADDR_EXPOSURE       0x0000500E
+#define ADDR_ISO            0x0000500F
+#define ADDR_EV             0x00005010
+
+#define ADDR_MONITOR        0x0000D001 
+#define ADDR_STORAGE        0x0000D002
+#define ADDR_RECORD_LIGHT   0x0000D008
+#define ADDR_MOVIE_MODE     0x0000D00B
+#define ADDR_HD_SETTING     0x0000D00C
+#define ADDR_HS_SETTING     0x0000D00D
+#define ADDR_CS_HIGH_SPEED  0x0000D00F
+#define ADDR_CS_UPPER_LIMIT 0x0000D010
+#define ADDR_CS_SHOT        0x0000D011
+
+#define DATA_POWER_OFF      0x0000
+
+#define DATA_IS0_AUTO       0xFFFF
+#define DATA_IS0_100        0x0064
+#define DATA_IS0_200        0x00C8
+#define DATA_IS0_400        0x0190
+#define DATA_IS0_800        0x0320
+#define DATA_IS0_1600       0x0640
+
+#define DATA_MOVIE_MODE_HD  0x0001
+#define DATA_MOVIE_MODE_HS  0x0002
+
+#define DATA_APERTURE_F2_7  0x0001
+#define DATA_APERTURE_F3_0  0x0002
+#define DATA_APERTURE_F3_3  0x0003
+#define DATA_APERTURE_F3_8  0x0004
+#define DATA_APERTURE_F4_2  0x0005
+#define DATA_APERTURE_F4_7  0x0006
+#define DATA_APERTURE_F5_3  0x0007
+#define DATA_APERTURE_F6_0  0x0008
+#define DATA_APERTURE_F6_7  0x0009
+#define DATA_APERTURE_F7_5  0x000A
+
+#define DATA_FOCUS_AF       0x0002
+#define DATA_FOCUS_MACRO    0x0003
+#define DATA_FOCUS_INFINITY 0x0004
+#define DATA_FOCUS_MANUAL   0x0005
+
+#define DATA_EXPOSURE_M     0x0001
+#define DATA_EXPOSURE_AUTO  0x0002
+#define DATA_EXPOSURE_A     0x0003
+#define DATA_EXPOSURE_S     0x0004
+
 usb_dev_handle *open_dev(void);
 int string_match(char s1[], char s2[], int length);
+
+//void exf1Cmd(WORD cmd, DWORD addr, WORD data);
+void exf1Cmd(WORD cmd, ...);
 void usbCmdGen(short int cmd, short int postCmdReads, int nCmdParameters, char cmdParameters[]);
+void usbTx(WORD cmd, DWORD cmdIndex, int nCmdParameterBytes, DDWORD cmdParameters);
+void usbRx(char isAck); 
+
+void start_config(char enableStillImage, char enablePreRecord);
+void stop_config();
+
 int init_camera(void);
 void half_shutter(void);
 void shutter(char filename[], char thumbnail[]);
 void terminate_camera(void);
-void setup_prerecord_movie_hs(void);
+
+void setup_movie_hs(char enablePreRecord); 
+void setup_movie_hd(char enablePreRecord); 
+
 void movie(char filename[], int delay);
 void setup_pc_monitor(void);
+void setup_iso(WORD iso);
+void setup_aperture(WORD aperture);
+void setup_exposure(WORD exposure); 
+
 int grap_pc_monitor_frame(char *jpg_img);
 void exit_camera(void);
 

@@ -29,6 +29,18 @@ int main(int argc, char** argv)
    printf(" *                                                                  *\n");
    printf(" ********************************************************************\n");
    printf(" \n");
+   printf(" Hint: a [x] sets aperture (x = 1-10).\n");
+   printf("          1: F2.7 (default).\n");
+   printf("          2: F3.0.\n");
+   printf("          3: F3.3.\n");
+   printf("          4: F3.8.\n");
+   printf("          5: F4.2.\n");
+   printf("          6: F4.7.\n");
+   printf("          7: F5.3.\n");
+   printf("          8: F6.0.\n");
+   printf("          9: F6.7.\n");
+   printf("         10: F7.5.\n");
+   printf(" \n");
    printf(" Hint: c [x] sets mode / movie mode (x = 1-9).\n");
    printf("          1: Single shot (default).\n");
    printf("          2: Continuous shutter.\n");
@@ -53,7 +65,15 @@ int main(int argc, char** argv)
    printf("          4: Manual.\n");
    printf("\n");
    printf(" Hint: h activates half-press.\n");
-   printf(" Hint: i activates interval shutter.\n");
+   printf("\n");
+   printf(" Hint: i [x] sets iso (x = 1-6).\n");
+   printf("          1: Auto (default).\n");
+   printf("          2: 100.\n");
+   printf("          3: 200.\n");
+   printf("          4: 400.\n");
+   printf("          5: 800.\n");
+   printf("          6: 1600.\n");
+   printf("\n");
    printf(" Hint: q quits this program.\n");
    printf(" Hint: m [x [y]] records a x second long movie called y.\n");
    printf(" Hint: s [x [y]] activates shutter and stores a picture called x\n");
@@ -74,25 +94,117 @@ int main(int argc, char** argv)
       sscanf(input, "%c", &com);
       
       switch (com) {
+         case 'a':
+            nargs = sscanf(input, "%c %d", &com, &arg);
+            printf("> Configuring aperture... \n");
+            switch (arg) {
+               case 1:
+                 setup_aperture(DATA_APERTURE_F2_7);
+                 break;
+               case 2:
+                 setup_aperture(DATA_APERTURE_F3_0);
+                 break;
+               case 3:
+                 setup_aperture(DATA_APERTURE_F3_3);
+                 break;
+               case 4:
+                 setup_aperture(DATA_APERTURE_F3_8);
+                 break;
+               case 5:
+                 setup_aperture(DATA_APERTURE_F4_2);
+                 break;
+               case 6:
+                 setup_aperture(DATA_APERTURE_F4_7);
+                 break;
+               case 7:
+                 setup_aperture(DATA_APERTURE_F5_3);
+                 break;
+               case 8:
+                 setup_aperture(DATA_APERTURE_F6_0);
+                 break;
+               case 9:
+                 setup_aperture(DATA_APERTURE_F6_7);
+                 break;
+               case 10:
+                 setup_aperture(DATA_APERTURE_F7_5);
+                 break;
+               default:
+                 printf("> Unknown aperture setting. \n");
+            }
+            break;
+
          case 'c': 
             nargs = sscanf(input, "%c %d", &com, &arg);
             printf("> Configuring mode / movie mode... \n");
             switch (arg) {
-               case 9: 
-                 setup_prerecord_movie_hs();        
-                 break; 
-               default: 
-                 printf("> This mode is yet to be supported. \n");
+                case 6:
+                    setup_movie_hd(FALSE);
+                    break; 
+                case 7:
+                    setup_movie_hd(TRUE);
+                    break; 
+                case 8:
+                    setup_movie_hs(FALSE);
+                    break; 
+                case 9:
+                    setup_movie_hs(TRUE);
+                    break;
+                default:
+                    printf("> This mode is yet to be supported. \n");
             }
             break; 
-         
+
+          case 'e':
+            nargs = sscanf(input, "%c %d", &com, &arg);
+            printf("> Configuring exposure... \n");
+            switch (arg) {
+               case 1:
+                 setup_exposure(DATA_EXPOSURE_M);
+                 break;
+               case 2:
+                 setup_exposure(DATA_EXPOSURE_AUTO);
+                 break;
+               case 3:
+                 setup_exposure(DATA_EXPOSURE_A);
+                 break;
+               case 4:
+                 setup_exposure(DATA_EXPOSURE_S);
+                 break;
+               default:
+                 printf("> Unknown exposure setting. \n");
+            }
+            break; 
+
          case 'h':
             printf("> Half press... \n");
             half_shutter(); 
             break; 
             
          case 'i':
-            printf("> Interval shutter... \n");
+            nargs = sscanf(input, "%c %d", &com, &arg);
+            printf("> Configuring ISO... \n");
+            switch (arg) {
+               case 1:
+                 setup_iso(DATA_IS0_AUTO);
+                 break;
+               case 2:
+                 setup_iso(DATA_IS0_100);
+                 break;
+               case 3:
+                 setup_iso(DATA_IS0_200);
+                 break;                 
+               case 4:
+                 setup_iso(DATA_IS0_400);
+                 break;
+               case 5:
+                 setup_iso(DATA_IS0_800);
+                 break;
+               case 6:
+                 setup_iso(DATA_IS0_1600);
+                 break;
+               default:
+                 printf("> Unknown ISO setting. \n");
+            }
             break; 
             
          case 'm':
@@ -107,6 +219,7 @@ int main(int argc, char** argv)
             break; 
             
          case 'q':
+            exit_camera();
             printf("> Bye! \n");
             terminate_camera();
             return 0;    
