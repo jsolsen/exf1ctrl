@@ -1,75 +1,5 @@
 #include "libexf1.h"
 
-/*  Command observations:
- *  Byte 1-4   = Number of bytes in packet.
- *  Byte 5-6   = Command idx. for broken up commands: 0x0001, 0x0002 ...
- *  Byte 7-8   = Command.
- *  Byte 9-12  = Command number: 0x00000000 - 0xFFFFFFFF.
- *  Byte 13-14 = Parameter 1.
- *  Byte 15-16 = Parameter 2.
- *  Byte 17-18 = Parameter 3.
- *  Byte 19-20 = Parameter 4.
- */
-
-/*  Ack observations:
- *  Byte 1-4   = Number of bytes in packet.
- *  Byte 5-6   = Ack idx. Ends with 0x0003.
- *  Byte 7-8   = Ack. 0x2001 = OK, 0x0002 = More data on the way. 
- *  Byte 9-12  = Command number: 0x00000000 - 0xFFFFFFFF.
- *  Byte 13-14 = Parameter 1.
- *  Byte 15-16 = Parameter 2.
- *  Byte 17-18 = Parameter 3.
- *  Byte 19-20 = Parameter 4.
- *  Byte 21-22 = Parameter 5.
- *  Byte 23-24 = Parameter 6.
- */
-
-/*  Command 0x1016 is used to configure camera settings.
- *  Byte 1-4   = Setting address.
- *  Byte 5-6   = Setting.
- *
- *  Examples:
- *
- *  Manual exposure:
- *  Exposure   = 0x0000500E, 0x0001 = M, 0x0002 = Auto, etc.
- *  ShutterSpe = 0x0000500D, 0x0023 = 1/40, 0x002B = 1/250, etc.
- *  Aperture   = 0x00005007, 0x0001 = F2.7, 0x0002 = F3.0, etc. 
- *
- *  Still image:
- *  Image size = 0x00005003, Size is written in ASCII.
- *  Quality    = 0x00005004, 0x0001 = Economy, 0x0002 = Normal, etc.
- *  WB         = 0x00005005, 0x0002 = Auto WB, 0x0004 = Daylight, etc.
- *  Metering   = 0x0000500B, 0x0002 = Center weighted, 0x0003 = Set multi, etc. 
- *  Flash      = 0x0000500C, 0x0001 = Auto flash, 0x0002 = Flash off, etc. 
- *  ISO        = 0x0000500F, 0xFFFF = Auto, 0x0064 = 100, 0x00C8 = 200, etc.
- *  EV         = 0x00005010, 0x0000 = -2.0EV, 0x0001 = -1.7EV, etc.
- *  Storage    = 0x0000D002, 0x0000 = Save to SD, 0x0001 = Save to PC. 
- *  Rec light  = 0x0000D008, 0x0000 = Off, 0x0001 = On
- *  Movie mode = 0x0000D00B, 0x0001 = HD, 0x0002 = HS
- *
- *  Continues shutter:
- *  High-speed = 0x0000D00F, 0x0001 = 1fps, 0x000C = 30fps, etc
- *  UpperLimit = 0x0000D010, 0x0001 = 3fps, 0x0002 = 5fps, etc.
- *
- *  Prerecord Still Image:
- *  CS shot    = 0x0000D011, 0x001E = 30, 0x0028 = 40, etc. 
- *
- *  Movie:
- *  HD setting = 0x0000D00C, 0x0000 = FHD, 0x0001 = HD
- *  HS setting = 0x0000D00D, 0x0000 = 300fps, 0x0001 = 600fps, etc. 
- *
- *  Focus      = 0x0000500A, 0x0002 = AF, 0x0003 = Macro focus, etc. 
- *
- */
-
-/*  Command 0x1014 / 0x1015 reads out a camera setting.
- *  Byte 1-4   = Setting address.
- *
- *  1. packet  = Setting?
- *  2. packet  = ACK?
- */
-
-
 usb_dev_handle *dev = NULL;
 char tmp[BUF_SIZE];
 char img[IMG_BUF_SIZE];
@@ -105,80 +35,61 @@ int string_match(char s1[], char s2[], int length)
 
 int init_camera(void)
 {
-  usb_init(); /* initialize the library */
-  usb_find_busses(); /* find all busses */
-  usb_find_devices(); /* find all connected devices */
+    usb_init();
+    usb_find_busses();
+    usb_find_devices();
 
-  if(!(dev = open_dev()))
-    {
+    if(!(dev = open_dev())) {
       printf(" Error: camera not found!\n");
       return 0;
     }
 
-  if(usb_set_configuration(dev, 1) < 0)
-    {
+    if(usb_set_configuration(dev, 1) < 0) {
       printf(" Error: setting config 1. \n");
       usb_close(dev);
       return 0;
     }
 
-  if(usb_claim_interface(dev, 0) < 0)
-    {
+    if(usb_claim_interface(dev, 0) < 0) {
       printf(" Error: claiming interface 0 failed. \n");
       usb_close(dev);
       return 0;
     }
 
-  if (usb_control_msg(dev, 0x21, 0x66, 0x00, 0x00, NULL, 0, TIME_OUT) < 0)
+    if (usb_control_msg(dev, 0x21, 0x66, 0x00, 0x00, NULL, 0, TIME_OUT) < 0)
       printf("error: cmd write 1 failed\n");
 
-  if (usb_interrupt_read(dev, EP_INT, tmp, 16, TIME_OUT) < 0)
+    if (usb_interrupt_read(dev, EP_INT, tmp, 16, TIME_OUT) < 0)
       //printf("error: interrupt read 1 failed\n");
 
-  if (usb_clear_halt(dev, EP_IN) < 0)
+    if (usb_clear_halt(dev, EP_IN) < 0)
       printf("error: halt clear failed.\n");
 
-  if (usb_clear_halt(dev, EP_OUT) < 0)
+    if (usb_clear_halt(dev, EP_OUT) < 0)
       printf("error: halt clear failed.\n");
 
-  if (usb_control_msg(dev, 0xA1, 0x67, 0x00, 0x00, &tmp[0], 0x0400, TIME_OUT) < 0)
+    if (usb_control_msg(dev, 0xA1, 0x67, 0x00, 0x00, &tmp[0], 0x0400, TIME_OUT) < 0)
       printf("error: cmd write 2 failed\n");
 
-  usbCmdGen(0x1001, TWO_READS, 0, NULL);
-  usbCmdGen(0x1002, ONE_READ,  4, (char[]){0x15, 0x06, 0x76, 0x19});
-  usbCmdGen(0x1014, TWO_READS, 4, (char[]){0x02, 0x50, 0x00, 0x00});
-  usbCmdGen(0x1016, ONE_READ,  6, (char[]){0x02, 0x50, 0x00, 0x00, 0x01, 0x80}); // 8001 read from 0x1014.
+    exf1Cmd(CMD_OPEN_SESSION, SESSION_ID);
+    exf1Cmd(CMD_WRITE, ADDR_FUNCTIONALITY, DATA_FUNC_EXTENDED);
+    start_config(TRUE, FALSE);
 
-  if (usb_interrupt_read(dev, EP_INT, tmp, 16, TIME_OUT) < 0)
-      printf("error: interrupt read 2 failed\n");
-
-  if (usb_interrupt_read(dev, EP_INT, tmp, 16, TIME_OUT) < 0)
-      printf("error: interrupt read 3 failed\n");
-
-  usbCmdGen(0x1001, TWO_READS, 0, NULL);
-
-  start_config(TRUE, FALSE);
-
-  usbCmdGen(0x1014, TWO_READS, 4, (char[]){0x0A, 0x50, 0x00, 0x00});
-  usbCmdGen(0x1014, TWO_READS, 4, (char[]){0x0E, 0x50, 0x00, 0x00});
-  usbCmdGen(0x1014, TWO_READS, 4, (char[]){0x0D, 0xD0, 0x00, 0x00});
-  usbCmdGen(0x1014, TWO_READS, 4, (char[]){0x02, 0xD0, 0x00, 0x00});
-
-  return 1;
+    return 1;
 }
+
+char halfShutterPressed = FALSE; 
 
 void half_shutter(void)
 {
-  // half shutter
-  usbCmdGen(0x9029, NO_READS, 0, NULL);
-
-  if (usb_interrupt_read(dev, EP_INT, tmp, 16, TIME_OUT) < 0)
-      printf("error: interrupt read 5 failed\n");
-/*
-  if (usb_interrupt_read(dev, EP_INT, tmp, 16, TIME_OUT) < 0)
-      printf("error: interrupt read 6 failed\n");
-*/
-  usb_bulk_read(dev, EP_IN, tmp, BUF_SIZE, TIME_OUT);
+    if (halfShutterPressed == FALSE) {
+        exf1Cmd(CMD_HALF_PRESS);
+        halfShutterPressed = TRUE; 
+    }
+    else {
+        exf1Cmd(CMD_HALF_RELEASE);
+        halfShutterPressed = FALSE; 
+    }
 }
 
 void shutter(char filename[], char thumbnail[])
@@ -313,7 +224,7 @@ void stop_config()
 
 void start_config(char enableStillImage, char enablePreRecord)
 {
-    if (stillImageEnabled)
+    if (enableStillImage)
         exf1Cmd(CMD_STILL_START);
     else
         exf1Cmd(CMD_MOVIE_START, enablePreRecord);
@@ -325,7 +236,7 @@ void start_config(char enableStillImage, char enablePreRecord)
 void movie(char filename[], int delay)
 {
     char bytes[2];
-    int bytesRead = -1, transfer_mov = 1, movSize = 0;
+    int bytesRead = -1, movSize = 0;
     int bytesCopied = -1, bytesRemaining = -1;
     FILE * pFile;
 
@@ -415,7 +326,7 @@ unsigned int USB_CMD_ID = 0xFFFFFFFF;
 //void exf1Cmd(WORD cmd, DWORD addr, WORD data) {
 void exf1Cmd(WORD cmd, ...)
 {
-    DWORD addr; WORD data;
+    DWORD dwordVal; WORD wordVal;
     char bytes[2];
 
     va_list ap;
@@ -423,10 +334,20 @@ void exf1Cmd(WORD cmd, ...)
 
     switch(cmd){
         case CMD_WRITE:
-            addr = va_arg(ap, int); data = va_arg(ap, int);
-            usbTx(cmd, 1, sizeof(addr), (DDWORD) addr);
-            usbTx(cmd, 2, sizeof(data), (DDWORD) data);
-            usbRx(TRUE);
+            dwordVal = va_arg(ap, int);  // Address
+            wordVal  = va_arg(ap, int);  // Value.
+            usbTx(cmd, TYPE_CMD,  sizeof(dwordVal),(DWORD) dwordVal);
+            usbTx(cmd, TYPE_DATA, sizeof(wordVal), (DWORD) wordVal);
+            usbRx();
+
+            if (dwordVal == ADDR_FUNCTIONALITY) {
+                if (usb_interrupt_read(dev, EP_INT, tmp, 16, TIME_OUT) < 0)
+                  printf(" Error: interrupt read 1 after setting ADDR_FUNCTIONALITY failed\n");
+
+                if (usb_interrupt_read(dev, EP_INT, tmp, 16, TIME_OUT) < 0)
+                  printf(" Error: interrupt read 2 after setting ADDR_FUNCTIONALITY failed\n");
+            }
+
             break;
 
         case CMD_READ:
@@ -434,9 +355,9 @@ void exf1Cmd(WORD cmd, ...)
 
         case CMD_STILL_START:
         case CMD_MOVIE_START:
-            addr = va_arg(ap, int);
-            usbTx(cmd, 1, sizeof(addr), (DDWORD) addr);
-            if (addr) { // PreRecordEnabled...
+            dwordVal = va_arg(ap, int);
+            usbTx(cmd, TYPE_CMD, sizeof(dwordVal), (DWORD) dwordVal);
+            if (dwordVal) { // PreRecordEnabled...
                 if (usb_control_msg(dev, 0x82, 0x00, 0x00, 0x81, bytes, 0x2, TIME_OUT) < 0)
                     printf("error: cmd write 1 failed\n");
 
@@ -445,71 +366,99 @@ void exf1Cmd(WORD cmd, ...)
 
                 Sleep(1000);
             }
-            usbRx(TRUE);
+            usbRx();
             break;
 
+        case CMD_HALF_PRESS:
+            usbTx(cmd, TYPE_CMD, 0, 0);
+            if (usb_interrupt_read(dev, EP_INT, tmp, 16, TIME_OUT) < 0)
+                printf(" Error: Interrupt read 1 failed! \n");
+            if (usb_interrupt_read(dev, EP_INT, tmp, 16, TIME_OUT) < 0)
+                printf(" Error: Interrupt read 2 failed! \n");
+            usbRx();
+            break;
+
+        case CMD_CLOSE_SESSION:
+        case CMD_HALF_RELEASE:
         case CMD_STILL_STOP:
         case CMD_MOVIE_STOP:
-            usbTx(cmd, 1, 0, 0);
-            usbRx(TRUE);
+            usbTx(cmd, TYPE_CMD, 0, 0);
+            usbRx();
             break;
 
+        case CMD_OPEN_SESSION:
+            USB_CMD_ID = 0;
         case CMD_TRANSFER:
-            addr = va_arg(ap, int);
-            usbTx(cmd, 1, sizeof(addr), (DDWORD) addr);
-            usbRx(TRUE);
+            dwordVal = va_arg(ap, int);
+            usbTx(cmd, TYPE_CMD, sizeof(dwordVal), (DWORD) dwordVal);
+            usbRx();
             break;
+
+        default:
+            printf("Unsupported command type!\n");
     }
     
     va_end(ap);
     USB_CMD_ID++;
 }
 
-void usbTx(WORD cmd, DWORD cmdIndex, int nCmdParameterBytes, DDWORD cmdParameters) {
+void usbTx(WORD cmd, WORD cmdType, int nCmdParameterBytes, DWORD cmdParameters) {
 
-    int packetSize = 12, i;
-    char cmdBuffer[20], *pCmdBuffer, *pCmdParameters;
+    PTP_CONTAINER tx;
+    int packetSize = 12 + nCmdParameterBytes;
 
-    // Calculate package size;
-    packetSize = 12 + nCmdParameterBytes;
-    //printf("PacketSize=%d\n", packetSize);
+    tx.length   = packetSize;
+    tx.type     = cmdType;
+    tx.code     = cmd;
+    tx.trans_id = USB_CMD_ID;
 
-    // Assuming big endianess here!
-    pCmdBuffer  = cmdBuffer;
-    pCmdBuffer += 0; SET_DWORD(pCmdBuffer, packetSize);   // Number of bytes in USB packet.
-    pCmdBuffer += 4; SET_WORD (pCmdBuffer, cmdIndex);     // Command index.
-    pCmdBuffer += 2; SET_WORD (pCmdBuffer, cmd);          // Command.
-    pCmdBuffer += 2; SET_DWORD(pCmdBuffer, USB_CMD_ID);   // Command number.
-
-    pCmdParameters = ((char*) cmdParameters);
-
-    if (nCmdParameterBytes == 2)
-        pCmdBuffer += 4, SET_WORD (pCmdBuffer, cmdParameters);
-    else if (nCmdParameterBytes == 4)
-        pCmdBuffer += 4, SET_DWORD(pCmdBuffer, cmdParameters);
-    else if (nCmdParameterBytes == 8) {
-        pCmdBuffer += 4, SET_DWORD(pCmdBuffer, cmdParameters);
-        pCmdBuffer += 4, SET_DWORD(pCmdBuffer, cmdParameters+4);
+    if (nCmdParameterBytes == 2) {
+        tx.payload.word_params.param1 = 0xFFFF & cmdParameters;
     }
-    
-    if (usb_bulk_write(dev, EP_OUT, cmdBuffer, packetSize, TIME_OUT) != packetSize)
+    else if (nCmdParameterBytes == 4) {
+        tx.payload.dword_params.param1 = cmdParameters;
+    }
+    else if (nCmdParameterBytes == 8) {
+
+        printf("This is not supported yet!\n");
+        tx.payload.dword_params.param1 = cmdParameters;
+        tx.payload.dword_params.param2 = cmdParameters;
+    }
+
+    /*
+    int i;
+    char *pTx = (char *) &tx;
+    for (i=0; i<packetSize; i++)
+        printf("%02X-", 0xFF & *(pTx + i));
+    printf("\n");
+    */
+
+    if (usb_bulk_write(dev, EP_OUT, (char *) &tx, packetSize, TIME_OUT) != packetSize)
         printf("Error: Bulk write failed for this command: %02X!\n", 0xFFFF & cmd);
-    
+
 }
 
-void usbRx(char isAck) {
+void usbRx() {
 
-    int i, bytesRead = usb_bulk_read(dev, EP_IN, tmp, BUF_SIZE, TIME_OUT);
-    
-    if (bytesRead < 0 || (isAck && GET_WORD(tmp+6) != CMD_OK)) {
-        printf("Error: Bulk read failed! ");
+    int bytesRead = usb_bulk_read(dev, EP_IN, tmp, BUF_SIZE, TIME_OUT);
 
-        if (isAck) printf("Ack = %02X.\n", 0xFFFF & GET_WORD(tmp+6));
+    if (bytesRead > 0) {
+        PTP_CONTAINER *rx = (PTP_CONTAINER *) tmp;
 
-        for (i=0; i<bytesRead; i++)
-            printf("%02X-", 0xFF & tmp[i]);
-        
-        printf("\n");
+        switch (rx->type) {
+            case TYPE_DATA:
+                break;
+            case TYPE_RESPONSE:
+                if (rx->code != CMD_OK) printf("Ack = %02X.\n", rx->code);
+                break;
+            case TYPE_EVENT:
+                printf("Read an event message.\n");
+                usbRx();
+                break;
+        }
+    }
+    else {
+        printf("Error: Bulk read failed! %d \n", bytesRead);
     }
 
 }
@@ -594,6 +543,13 @@ void setup_pc_monitor(void)
   start_config(stillImageEnabled, preRecordEnabled);
 }
 
+void setup_lcd_monitor(void)
+{
+  stop_config();
+  usbCmdGen(0x1016, ONE_READ, 6, (char[]){0x01, 0xD0, 0x00, 0x00, 0x01, 0x00});
+  start_config(stillImageEnabled, preRecordEnabled);
+}
+
 void exit_camera(void)
 {
     /*
@@ -620,15 +576,8 @@ void exit_camera(void)
     */
 
     stop_config();
-    exf1Cmd(CMD_WRITE, ADDR_POWER, DATA_POWER_OFF);
-
-    if (usb_interrupt_read(dev, EP_INT, tmp, 16, TIME_OUT) < 0)
-        printf("error: interrupt read 1 failed\n");
-
-    if (usb_interrupt_read(dev, EP_INT, tmp, 16, TIME_OUT) < 0)
-        printf("error: interrupt read 1 failed\n");
-
-    usbCmdGen(0x1003, ONE_READ, 0, NULL);
+    exf1Cmd(CMD_WRITE, ADDR_FUNCTIONALITY, DATA_FUNC_BASIC);
+    exf1Cmd(CMD_CLOSE_SESSION);
 
     printf("Exit done\n");
 }

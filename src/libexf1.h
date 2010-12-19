@@ -35,7 +35,6 @@
 
 #define WORD                short unsigned int      // 16bits
 #define DWORD               unsigned int            // 32bits
-#define DDWORD              long unsigned int       // 64bits
 
 #define GET_WORD(ptr)  ((0xFF & *(ptr)) + ((0xFF & *(ptr+1)) << 8))
 #define GET_DWORD(ptr) ((0xFF & *(ptr)) + ((0xFF & *(ptr+1)) << 8) + ((0xFF & *(ptr+2)) << 16) + ((0xFF & *(ptr+3)) << 24))
@@ -43,12 +42,25 @@
 #define SET_WORD(ptr, val)  ({*ptr = (val & 0xFF); *(ptr+1) = (val & 0xFF00) >> 8;})
 #define SET_DWORD(ptr, val) ({*ptr = (val & 0xFF); *(ptr+1) = (val & 0xFF00) >> 8; *(ptr+2) = (val & 0xFF0000) >> 16; *(ptr+3) = (val & 0xFF000000) >> 24;})
 
+
+#define SESSION_ID          0x19760615
+
+#define CMD_GET_DEVICE_INFO 0x1001
+#define CMD_OPEN_SESSION    0x1002
+#define CMD_CLOSE_SESSION   0x1003
+#define CMD_GET_STORAGE_IDS 0x1004
+
+#define CMD_GET_PROP_DESC   0x1014
+
 #define CMD_READ            0x1015
 #define CMD_WRITE           0x1016
 #define CMD_OK              0x2001
 
 #define CMD_STILL_START     0x9001
 #define CMD_STILL_STOP      0x9002
+
+#define CMD_HALF_PRESS      0x9029
+#define CMD_HALF_RELEASE    0x902A
 
 #define CMD_MOVIE_START     0x9041
 #define CMD_MOVIE_STOP      0x9042
@@ -65,7 +77,7 @@
 
 // Camera settings.
 
-#define ADDR_POWER          0x00005002
+#define ADDR_FUNCTIONALITY  0x00005002
 #define ADDR_IMAGE_SIZE     0x00005003
 #define ADDR_QUALITY        0x00005004
 #define ADDR_WHITE_BALANCE  0x00005005
@@ -88,7 +100,8 @@
 #define ADDR_CS_UPPER_LIMIT 0x0000D010
 #define ADDR_CS_SHOT        0x0000D011
 
-#define DATA_POWER_OFF      0x0000
+#define DATA_FUNC_BASIC     0x0000
+#define DATA_FUNC_EXTENDED  0x8001
 
 #define DATA_IS0_AUTO       0xFFFF
 #define DATA_IS0_100        0x0064
@@ -121,14 +134,42 @@
 #define DATA_EXPOSURE_A     0x0003
 #define DATA_EXPOSURE_S     0x0004
 
+#define TYPE_CMD            0x0001
+#define TYPE_DATA           0x0002
+#define TYPE_RESPONSE       0x0003
+#define TYPE_EVENT          0x0004
+
+
+struct _PTP_CONTAINER {
+    DWORD length;
+    WORD  type;
+    WORD  code;
+    DWORD trans_id;
+    union {
+        struct {
+            WORD param1;
+            WORD param2;
+            WORD param3;
+            WORD param4;
+        } word_params;
+        struct {
+            DWORD param1;
+            DWORD param2;
+        } dword_params;
+        unsigned char data[BUF_SIZE-12];
+    } payload;
+};
+typedef struct _PTP_CONTAINER PTP_CONTAINER;
+
+
 usb_dev_handle *open_dev(void);
 int string_match(char s1[], char s2[], int length);
 
 //void exf1Cmd(WORD cmd, DWORD addr, WORD data);
 void exf1Cmd(WORD cmd, ...);
 void usbCmdGen(short int cmd, short int postCmdReads, int nCmdParameters, char cmdParameters[]);
-void usbTx(WORD cmd, DWORD cmdIndex, int nCmdParameterBytes, DDWORD cmdParameters);
-void usbRx(char isAck); 
+void usbTx(WORD cmd, WORD cmdType, int nCmdParameterBytes, DWORD cmdParameters);
+void usbRx(); 
 
 void start_config(char enableStillImage, char enablePreRecord);
 void stop_config();
