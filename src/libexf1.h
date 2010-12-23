@@ -77,6 +77,7 @@
 
 // Camera settings.
 
+#define ADDR_BATTERY_LEVEL  0x00005001
 #define ADDR_FUNCTIONALITY  0x00005002
 #define ADDR_IMAGE_SIZE     0x00005003
 #define ADDR_QUALITY        0x00005004
@@ -90,15 +91,38 @@
 #define ADDR_ISO            0x0000500F
 #define ADDR_EV             0x00005010
 
+#define ADDR_CAPTURE_MODE   0x00005013
+#define ADDR_CONTRAST       0x00005014
+#define ADDR_SHARPNESS      0x00005015
+#define ADDR_METERING_MODE  0x0000501C
+
 #define ADDR_MONITOR        0x0000D001 
-#define ADDR_STORAGE        0x0000D002
+#define ADDR_STORAGE        0x0000D002 //Not reported by DeviceInfo?
+#define ADDR_UNKNOWN_1      0x0000D004
+#define ADDR_UNKNOWN_2      0x0000D005
+#define ADDR_UNKNOWN_3      0x0000D007
 #define ADDR_RECORD_LIGHT   0x0000D008
+#define ADDR_UNKNOWN_4      0x0000D009
+#define ADDR_UNKNOWN_5      0x0000D00A
 #define ADDR_MOVIE_MODE     0x0000D00B
 #define ADDR_HD_SETTING     0x0000D00C
 #define ADDR_HS_SETTING     0x0000D00D
 #define ADDR_CS_HIGH_SPEED  0x0000D00F
 #define ADDR_CS_UPPER_LIMIT 0x0000D010
 #define ADDR_CS_SHOT        0x0000D011
+#define ADDR_UNKNOWN_6      0x0000D012
+#define ADDR_UNKNOWN_7      0x0000D013
+#define ADDR_UNKNOWN_8      0x0000D015
+#define ADDR_UNKNOWN_9      0x0000D017
+#define ADDR_UNKNOWN_10     0x0000D018
+#define ADDR_UNKNOWN_11     0x0000D019
+#define ADDR_UNKNOWN_12     0x0000D01A
+#define ADDR_UNKNOWN_13     0x0000D01B
+#define ADDR_UNKNOWN_14     0x0000D01C
+#define ADDR_UNKNOWN_15     0x0000D01D
+#define ADDR_UNKNOWN_16     0x0000D020
+#define ADDR_UNKNOWN_17     0x0000D030
+#define ADDR_UNKNOWN_18     0x0000D080
 
 #define DATA_FUNC_BASIC     0x0000
 #define DATA_FUNC_EXTENDED  0x8001
@@ -139,6 +163,26 @@
 #define TYPE_RESPONSE       0x0003
 #define TYPE_EVENT          0x0004
 
+struct _WORD_DATA_SET {
+    DWORD noItems;
+    WORD  data[];
+};
+typedef struct _WORD_DATA_SET WORD_DATA_SET;
+
+
+// GCC pack pragmas.
+#define PACK( __Declaration__ ) __Declaration__ __attribute__((__packed__))
+
+// VC++ pack pragmas,
+//#define PACK( __Declaration__ ) __pragma( pack(push, 1) ) __Declaration__ __pragma( pack(pop) )
+
+PACK(
+struct _STRING_DATA_SET {
+    char noItems;
+    WORD data[];
+});
+
+typedef struct _STRING_DATA_SET STRING_DATA_SET;
 
 struct _PTP_CONTAINER {
     DWORD length;
@@ -161,6 +205,60 @@ struct _PTP_CONTAINER {
 };
 typedef struct _PTP_CONTAINER PTP_CONTAINER;
 
+struct _PTP_DEVICE_INFO {
+    WORD  standardVersion;
+    DWORD vendorExtensionID;
+    WORD  vendorExtensionVersion;
+    STRING_DATA_SET *vendorExtensionDesc;
+    WORD  functionalMode;
+    WORD_DATA_SET *operationsSupported;
+    WORD_DATA_SET *eventsSupported;
+    WORD_DATA_SET *devicePropertiesSupported;
+    WORD_DATA_SET *captureFormats;
+    WORD_DATA_SET *imageFormats;
+    STRING_DATA_SET *manufacturer;
+    STRING_DATA_SET *model;
+    STRING_DATA_SET *deviceVersion;
+    STRING_DATA_SET *serialNumber;
+};
+typedef struct _PTP_DEVICE_INFO PTP_DEVICE_INFO;
+
+struct _RANGE_FORM {
+    void *minimumValue;
+    void *maximumValue;
+    void *stepSize;
+};
+typedef struct _RANGE_FORM RANGE_FORM;
+
+struct _ENUM_FORM {
+    WORD numberOfValues;
+    void **supportedValue;
+};
+typedef struct _ENUM_FORM ENUM_FORM;
+
+PACK(
+struct _PTP_DEVICE_PROPERTY {
+    WORD code;
+    WORD dataType;
+    char getSet;
+    void *defaultValue;
+    void *currentValue;
+    char formFlag;
+    union {
+        ENUM_FORM enumForm;
+        RANGE_FORM rangeForm;
+    } form;
+});
+typedef struct _PTP_DEVICE_PROPERTY PTP_DEVICE_PROPERTY;
+
+#define PROPERTY_FORM_NONE  	0x00
+#define PROPERTY_FORM_RANGE     0x01
+#define PROPERTY_FORM_ENUM	0x02
+
+#define DATA_TYPE_CHAR		0x0002
+#define DATA_TYPE_WORD  	0x0004
+#define DATA_TYPE_DWORD 	0x0006
+#define DATA_TYPE_STRING	0xFFFF
 
 usb_dev_handle *open_dev(void);
 int string_match(char s1[], char s2[], int length);
@@ -170,6 +268,19 @@ void exf1Cmd(WORD cmd, ...);
 void usbCmdGen(short int cmd, short int postCmdReads, int nCmdParameters, char cmdParameters[]);
 void usbTx(WORD cmd, WORD cmdType, int nCmdParameterBytes, DWORD cmdParameters);
 void usbRx(); 
+
+
+void printStringDataSet(char *pDescrition, STRING_DATA_SET *pDataSet);
+void printWordDataSet(char *pDescrition, WORD_DATA_SET *pDataSet); 
+void setDeviceInfo(char *pData);
+void printDeviceInfo();
+
+void printEnumDataSet(char *pDescrition, ENUM_FORM *pDataSet, WORD dataType);
+void setDeviceProperty(char *pData); 
+void printDeviceProperty();
+
+WORD getStringDataSet(STRING_DATA_SET **dst, char *src);
+DWORD getWordDataSet(WORD_DATA_SET **dst, char *src);
 
 void start_config(char enableStillImage, char enablePreRecord);
 void stop_config();
