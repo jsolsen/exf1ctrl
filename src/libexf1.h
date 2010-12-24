@@ -19,9 +19,6 @@
 #define ONE_READ  1
 #define TWO_READS 2
 
-#define CMD_START 1
-#define CMD_END   2
-
 #define MY_VID 0x07CF
 #define MY_PID 0x1023
 
@@ -285,22 +282,11 @@ DWORD getWordDataSet(WORD_DATA_SET **dst, char *src);
 void start_config(char enableStillImage, char enablePreRecord);
 void stop_config();
 
-int init_camera(void);
-void half_shutter(void);
-void shutter(char filename[], char thumbnail[]);
-void terminate_camera(void);
-
-void setup_movie_hs(char enablePreRecord); 
-void setup_movie_hd(char enablePreRecord); 
-
-void movie(char filename[], int delay);
-void setup_pc_monitor(void);
-void setup_iso(WORD iso);
-void setup_aperture(WORD aperture);
-void setup_exposure(WORD exposure); 
-
-int grap_pc_monitor_frame(char *jpg_img);
-void exit_camera(void);
+extern usb_dev_handle *dev;
+extern char tmp[BUF_SIZE];
+extern char img[IMG_BUF_SIZE];
+extern PTP_DEVICE_INFO deviceInfo;
+extern PTP_DEVICE_PROPERTY deviceProperty;
 
 #endif	/* LIBEXF1_H */
 

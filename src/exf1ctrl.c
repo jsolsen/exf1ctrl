@@ -13,7 +13,7 @@
 int main(int argc, char** argv)
 {
    char i, input[64], com, name[32], tname[32];
-   int arg, nargs; 
+   int arg, nargs, addr, val;
  
    printf(" \n");
    printf(" ********************************************************************\n");
@@ -234,7 +234,17 @@ int main(int argc, char** argv)
             else
                shutter("CIMG001.jpg", "CIMG001_thumb.jpg");
             break; 
-            
+
+         case 'x':
+            nargs = sscanf(input, "%c %x %x", &com, &addr, &val);
+            if (nargs == 3) {
+               printf("> Setting property 0x%X to 0x%X... \n", addr, val);
+               exf1Cmd(CMD_WRITE, addr, val);
+            }
+            else
+               printf("> Three arguments required... \n");
+            break;
+
          default: 
             printf("> Unrecognized command: %s \n", input);   
             break; 
