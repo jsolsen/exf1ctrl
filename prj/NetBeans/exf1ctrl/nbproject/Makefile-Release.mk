@@ -33,6 +33,7 @@ OBJECTDIR=build/${CND_CONF}/${CND_PLATFORM}
 
 # Object Files
 OBJECTFILES= \
+	${OBJECTDIR}/_ext/1386528437/exf1api.o \
 	${OBJECTDIR}/_ext/1386528437/exf1ctrl.o \
 	${OBJECTDIR}/_ext/1386528437/libexf1.o
 
@@ -60,6 +61,11 @@ LDLIBSOPTIONS=-lusb
 ../../../bin/ExF1Ctrl.exe: ${OBJECTFILES}
 	${MKDIR} -p ../../../bin
 	${LINK.c} -o ../../../bin/ExF1Ctrl ${OBJECTFILES} ${LDLIBSOPTIONS} 
+
+${OBJECTDIR}/_ext/1386528437/exf1api.o: ../../../src/exf1api.c 
+	${MKDIR} -p ${OBJECTDIR}/_ext/1386528437
+	${RM} $@.d
+	$(COMPILE.c) -O2 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/1386528437/exf1api.o ../../../src/exf1api.c
 
 ${OBJECTDIR}/_ext/1386528437/exf1ctrl.o: ../../../src/exf1ctrl.c 
 	${MKDIR} -p ${OBJECTDIR}/_ext/1386528437

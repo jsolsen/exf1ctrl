@@ -5,6 +5,7 @@ char tmp[BUF_SIZE];
 char img[IMG_BUF_SIZE];
 PTP_DEVICE_INFO deviceInfo;
 PTP_DEVICE_PROPERTY deviceProperty;
+PTP_OBJECT_INFO objectInfo; 
 
 usb_dev_handle *open_dev(void)
 {
@@ -25,23 +26,12 @@ usb_dev_handle *open_dev(void)
   return NULL;
 }
 
-int string_match(char s1[], char s2[], int length)
-{
-  int i, matches = 0;
-
-  for (i=0; s1[i] == s2[i] && i<length; i++)
-      matches++;
-
-  return matches-length;
-}
-
 unsigned int USB_CMD_ID = 0xFFFFFFFF;
 
-//void exf1Cmd(WORD cmd, DWORD addr, WORD data) {
 void exf1Cmd(WORD cmd, ...)
 {
     DWORD dwordVal; WORD wordVal;
-    char bytes[2];
+    char bytes[2], *pString;
 
     va_list ap;
     va_start(ap, cmd);
@@ -50,8 +40,8 @@ void exf1Cmd(WORD cmd, ...)
         case CMD_WRITE:
             dwordVal = va_arg(ap, int);  // Address
             wordVal  = va_arg(ap, int);  // Value.
-            usbTx(cmd, TYPE_CMD,  sizeof(dwordVal),(DWORD) dwordVal);
-            usbTx(cmd, TYPE_DATA, sizeof(wordVal), (DWORD) wordVal);
+            usbTx(cmd, TYPE_CMD,  sizeof(dwordVal),(DWORD) dwordVal, 0);
+            usbTx(cmd, TYPE_DATA, sizeof(wordVal), (DWORD) wordVal, 0);
             usbRx();
 
             if (dwordVal == ADDR_FUNCTIONALITY) {
@@ -67,24 +57,28 @@ void exf1Cmd(WORD cmd, ...)
         case CMD_READ:
             break;
 
+        case CMD_MOVIE_RELEASE:
         case CMD_STILL_START:
         case CMD_MOVIE_START:
             dwordVal = va_arg(ap, int);
-            usbTx(cmd, TYPE_CMD, sizeof(dwordVal), (DWORD) dwordVal);
+            usbTx(cmd, TYPE_CMD, sizeof(dwordVal), (DWORD) dwordVal, 0);
             if (dwordVal) { // PreRecordEnabled...
-                if (usb_control_msg(dev, 0x82, 0x00, 0x00, 0x81, bytes, 0x2, TIME_OUT) < 0)
-                    printf("error: cmd write 1 failed\n");
+                do {
+                    if (usb_control_msg(dev, 0x82, 0x00, 0x00, 0x81, bytes, 0x2, TIME_OUT) < 0)
+                        printf("error: cmd write 1 failed\n");
 
-                if (usb_control_msg(dev, 0x82, 0x00, 0x00, 0x2, bytes, 0x2, TIME_OUT) < 0)
-                    printf("error: cmd write 2 failed\n");
-
-                Sleep(1000);
+                    if (usb_control_msg(dev, 0x82, 0x00, 0x00, 0x2, bytes, 0x2, TIME_OUT) < 0)
+                        printf("error: cmd write 2 failed\n");
+                    //Sleep(1000);
+                } while (usbRx() < 0);
             }
-            usbRx();
+            else
+                usbRx();
             break;
 
+        case CMD_SHUTTER:
         case CMD_HALF_PRESS:
-            usbTx(cmd, TYPE_CMD, 0, 0);
+            usbTx(cmd, TYPE_CMD, 0, 0, 0);
             if (usb_interrupt_read(dev, EP_INT, tmp, 16, TIME_OUT) < 0)
                 printf(" Error: Interrupt read 1 failed! \n");
             if (usb_interrupt_read(dev, EP_INT, tmp, 16, TIME_OUT) < 0)
@@ -92,32 +86,53 @@ void exf1Cmd(WORD cmd, ...)
             usbRx();
             break;
 
+        case CMD_MOVIE_PRESS:
         case CMD_CLOSE_SESSION:
         case CMD_HALF_RELEASE:
         case CMD_STILL_STOP:
         case CMD_MOVIE_STOP:
-            usbTx(cmd, TYPE_CMD, 0, 0);
+            usbTx(cmd, TYPE_CMD, 0, 0, 0);
             usbRx();
             break;
 
         case CMD_OPEN_SESSION:
             USB_CMD_ID = 0;
-        case CMD_TRANSFER:
             dwordVal = va_arg(ap, int);
-            usbTx(cmd, TYPE_CMD, sizeof(dwordVal), (DWORD) dwordVal);
+            usbTx(cmd, TYPE_CMD, sizeof(dwordVal), (DWORD) dwordVal, 0);
             usbRx();
             break;
 
         case CMD_GET_DEVICE_INFO:
-            usbTx(cmd, TYPE_CMD, 0, 0);
+            usbTx(cmd, TYPE_CMD, 0, 0, 0);
+            usbRx();
+            usbRx();
+            break;
+
+        case CMD_GET_OBJECT_INFO:
+            usbTx(cmd, TYPE_CMD, 2*sizeof(DWORD), 0x00000001, 0xFFFFFFFF); 
             usbRx();
             usbRx();
             break;
 
         case CMD_GET_PROP_DESC:
             dwordVal = va_arg(ap, int);
-            usbTx(cmd, TYPE_CMD, sizeof(dwordVal), (DWORD) dwordVal);
+            usbTx(cmd, TYPE_CMD, sizeof(dwordVal), (DWORD) dwordVal, 0);
             usbRx();
+            usbRx();
+            break;
+
+        case CMD_GET_THUMBNAIL:
+        case CMD_GET_OBJECT:
+            dwordVal = va_arg(ap, int); // File/memory destination. 
+            usbTx(cmd, TYPE_CMD, sizeof(DWORD), 0x00000001, 0); // Fixed objectHandle!
+            switch (dwordVal) {
+                case TO_FILE:
+                    pString = (char *) va_arg(ap, int);
+                    usbRxToFile(pString);
+                    break;
+                case TO_MEM:
+                    break;
+            }
             usbRx();
             break;
 
@@ -129,7 +144,7 @@ void exf1Cmd(WORD cmd, ...)
     USB_CMD_ID++;
 }
 
-void usbTx(WORD cmd, WORD cmdType, int nCmdParameterBytes, DWORD cmdParameters) {
+void usbTx(WORD cmd, WORD cmdType, int nCmdParameterBytes, DWORD cmdParameter1, DWORD cmdParameter2) {
 
     PTP_CONTAINER tx;
     int packetSize = 12 + nCmdParameterBytes;
@@ -140,16 +155,14 @@ void usbTx(WORD cmd, WORD cmdType, int nCmdParameterBytes, DWORD cmdParameters) 
     tx.trans_id = USB_CMD_ID;
 
     if (nCmdParameterBytes == 2) {
-        tx.payload.word_params.param1 = 0xFFFF & cmdParameters;
+        tx.payload.word_params.param1 = 0xFFFF & cmdParameter1;
     }
     else if (nCmdParameterBytes == 4) {
-        tx.payload.dword_params.param1 = cmdParameters;
+        tx.payload.dword_params.param1 = cmdParameter1;
     }
     else if (nCmdParameterBytes == 8) {
-
-        printf("This is not supported yet!\n");
-        tx.payload.dword_params.param1 = cmdParameters;
-        tx.payload.dword_params.param2 = cmdParameters;
+        tx.payload.dword_params.param1 = cmdParameter1;
+        tx.payload.dword_params.param2 = cmdParameter2;
     }
 
     /*
@@ -165,7 +178,7 @@ void usbTx(WORD cmd, WORD cmdType, int nCmdParameterBytes, DWORD cmdParameters) 
 
 }
 
-void usbRx() {
+int usbRx() {
 
     int bytesRead = usb_bulk_read(dev, EP_IN, tmp, BUF_SIZE, TIME_OUT);
                         int i;
@@ -186,6 +199,11 @@ void usbRx() {
                         printDeviceProperty();
                         break;
 
+                    case CMD_GET_OBJECT_INFO:
+                        setObjectInfo(rx->payload.data);
+                        printObjectInfo();
+                        break;
+
                     default:
                         printf("Unhandled data package: 0x%04X\n", rx->type);
                         pTx = rx->payload.data;
@@ -203,10 +221,37 @@ void usbRx() {
                 break;
         }
     }
-    else {
-        printf("Error: Bulk read failed! %d \n", bytesRead);
+    else if (bytesRead != -116) {
+        printf("Error: Bulk read failed! %d %s\n", bytesRead, usb_strerror());
     }
+    return bytesRead;
+}
 
+int usbRxToFile(char *fileName) {
+
+    FILE *pFile;
+    
+    int bytesRead = usb_bulk_read(dev, EP_IN, img, IMG_BUF_SIZE, TIME_OUT);
+    int bytesRemaining = -1, objectSize = 0;
+
+    if (bytesRead > 0) {
+
+        PTP_CONTAINER *rx = (PTP_CONTAINER *) img; 
+        objectSize = rx->length-12;
+
+        pFile = fopen(fileName, "wb");
+        fwrite(rx->payload.data, 1, bytesRead-12, pFile);
+
+        printf("> Transferring %d bytes... \n", objectSize);
+        for (bytesRemaining = rx->length - bytesRead; bytesRemaining > 0; bytesRemaining -= bytesRead) {
+            do bytesRead = usb_bulk_read(dev, EP_IN, img, IMG_BUF_SIZE, TIME_OUT);
+            while (bytesRead < 0);
+            fwrite(img, 1, bytesRead, pFile);
+        }
+        fclose (pFile);
+        printf("> %s saved to disk. \n", fileName);
+    }
+    return bytesRemaining;
 }
 
 WORD getStringDataSet(STRING_DATA_SET **dst, char *src) {
@@ -291,7 +336,7 @@ void printDeviceInfo() {
     printStringDataSet("Model         : ", deviceInfo.model);
     printStringDataSet("DeviceVersion : ", deviceInfo.deviceVersion);
     printStringDataSet("SerialNumber  : ", deviceInfo.serialNumber);
-                printf("ExtensionID   : 0x%04X\n", deviceInfo.vendorExtensionID);
+                printf("ExtensionID   : 0x%08X\n", deviceInfo.vendorExtensionID);
     printStringDataSet("Description   : ", deviceInfo.vendorExtensionDesc);
                 printf("Version       : 0x%04X\n", deviceInfo.vendorExtensionVersion);
       printWordDataSet("Properties    : ", deviceInfo.devicePropertiesSupported);
@@ -463,10 +508,6 @@ void setDeviceProperty(char *pData) {
                         deviceProperty.form.enumForm.supportedValue[i]  = malloc(255*sizeof(char));
                         pData += getStringDataSet((STRING_DATA_SET **)&deviceProperty.form.enumForm.supportedValue[i], pData);
                     }
-
-
-
-                    
                     break;
 
                 default:
@@ -557,6 +598,59 @@ void printDeviceProperty() {
 }
 
 
+
+void setObjectInfo(char *pData) {
+
+    // Free up old data sets.
+    free(objectInfo.fileName);
+    free(objectInfo.captureDate);
+    free(objectInfo.modificationDate);
+    free(objectInfo.keyWords);
+
+    // Retrieve new object info from packet.
+    objectInfo.storageId = GET_DWORD(pData);  pData += sizeof(DWORD);
+    objectInfo.objectFormat = GET_WORD (pData);  pData += sizeof(WORD);
+    objectInfo.protectionStatus = GET_WORD (pData);  pData += sizeof(WORD);
+    objectInfo.objectCompressedSize = GET_DWORD(pData);  pData += sizeof(DWORD);
+    objectInfo.thumbFormat = GET_WORD (pData);  pData += sizeof(WORD);
+    objectInfo.thumbCompressedSize = GET_DWORD(pData);  pData += sizeof(DWORD);
+    objectInfo.thumbPixWidth = GET_DWORD(pData);  pData += sizeof(DWORD);
+    objectInfo.thumbPixHeight = GET_DWORD(pData);  pData += sizeof(DWORD);
+    objectInfo.imagePixWidth = GET_DWORD(pData);  pData += sizeof(DWORD);
+    objectInfo.imagePixHeight = GET_DWORD(pData);  pData += sizeof(DWORD);
+    objectInfo.imageBitDepth = GET_DWORD(pData);  pData += sizeof(DWORD);
+    objectInfo.parentObject = GET_DWORD(pData);  pData += sizeof(DWORD);
+    objectInfo.associationType = GET_WORD (pData);  pData += sizeof(WORD);
+    objectInfo.associationDesc = GET_DWORD(pData);  pData += sizeof(DWORD);
+    objectInfo.sequenceNumber = GET_DWORD(pData);  pData += sizeof(DWORD);
+    pData += getStringDataSet(&objectInfo.fileName, pData);
+    pData += getStringDataSet(&objectInfo.captureDate, pData);
+    pData += getStringDataSet(&objectInfo.modificationDate, pData);
+    pData += getStringDataSet(&objectInfo.keyWords, pData);
+
+}
+
+void printObjectInfo() {
+
+    printStringDataSet("Filename        : ", objectInfo.fileName);
+    printStringDataSet("CaptureDate     : ", objectInfo.captureDate);
+    printStringDataSet("Modification    : ", objectInfo.modificationDate);
+    printStringDataSet("Keywords        : ", objectInfo.keyWords);
+                printf("StorageID       : 0x%08X\n", objectInfo.storageId);
+                printf("ObjectFormat    : 0x%04X\n", objectInfo.objectFormat);
+                printf("Protection      : 0x%04X\n", objectInfo.protectionStatus);
+                printf("ObjectDimension : %dx%dx%d\n", objectInfo.imagePixWidth, objectInfo.imagePixHeight, objectInfo.imageBitDepth);
+                printf("CompressedSize  : %d bytes\n", objectInfo.objectCompressedSize);
+                printf("ThumbFormat     : 0x%04X\n", objectInfo.thumbFormat);
+                printf("ThumbSize       : %d bytes\n", objectInfo.thumbCompressedSize);
+                printf("ThumbDimension  : %dx%d\n", objectInfo.thumbPixWidth, objectInfo.thumbPixHeight);
+                printf("ParentObject    : 0x%08X\n", objectInfo.parentObject);
+                printf("AssociationType : 0x%04X\n", objectInfo.associationType);
+                printf("AssociationDesc : 0x%08X\n", objectInfo.associationDesc);
+                printf("SequenceNumber  : 0x%08X\n", objectInfo.sequenceNumber);
+
+}
+
 //void usbCmdGen(short int cmdId, int cmdParameter, short int postCmdReads) {
 void usbCmdGen(short int cmd, short int postCmdReads, int nCmdParameters, char cmdParameters[]) {
 
@@ -623,6 +717,13 @@ void usbCmdGen(short int cmd, short int postCmdReads, int nCmdParameters, char c
 
     for (i=0; i<postCmdReads; i++) {
         bytesRead = usb_bulk_read(dev, EP_IN, tmp, BUF_SIZE, TIME_OUT);
+/*
+        char *pTx = tmp;
+        int j; 
+        for (j=0; j<bytesRead; j++)
+            printf("%02X-", 0xFF & *(pTx + j));
+        printf("\n");
+ */
         if (bytesRead < 0)
             printf("Error: Bulk read failed for this command: %02X!\n", 0xFFFF & cmd);
     }

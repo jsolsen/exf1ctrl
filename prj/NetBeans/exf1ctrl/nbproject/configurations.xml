@@ -5,6 +5,7 @@
                    displayName="Header Files"
                    projectFiles="true"
                    kind="SOURCE_LOGICAL_FOLDER">
+      <itemPath>../../../src/exf1api.h</itemPath>
       <itemPath>../../../src/exf1ctrl.h</itemPath>
       <itemPath>../../../src/libexf1.h</itemPath>
     </logicalFolder>
@@ -17,6 +18,7 @@
                    displayName="Source Files"
                    projectFiles="true"
                    kind="SOURCE_LOGICAL_FOLDER">
+      <itemPath>../../../src/exf1api.c</itemPath>
       <itemPath>../../../src/exf1ctrl.c</itemPath>
       <itemPath>../../../src/libexf1.c</itemPath>
     </logicalFolder>

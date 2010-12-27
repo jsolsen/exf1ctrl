@@ -56,13 +56,19 @@
 #define CMD_STILL_START     0x9001
 #define CMD_STILL_STOP      0x9002
 
+#define CMD_GET_OBJECT_INFO 0x900C
+
+#define CMD_SHUTTER         0x9024
 #define CMD_HALF_PRESS      0x9029
 #define CMD_HALF_RELEASE    0x902A
 
 #define CMD_MOVIE_START     0x9041
 #define CMD_MOVIE_STOP      0x9042
+#define CMD_MOVIE_PRESS     0x9043
+#define CMD_MOVIE_RELEASE   0x9044
 
-#define CMD_TRANSFER        0x9025
+#define CMD_GET_OBJECT      0x9025
+#define CMD_GET_THUMBNAIL   0x9026
 
 #define DATA_CAPTURE        0x0001
 #define DATA_MONITOR        0x0002
@@ -257,15 +263,39 @@ typedef struct _PTP_DEVICE_PROPERTY PTP_DEVICE_PROPERTY;
 #define DATA_TYPE_DWORD 	0x0006
 #define DATA_TYPE_STRING	0xFFFF
 
-usb_dev_handle *open_dev(void);
-int string_match(char s1[], char s2[], int length);
+#define TO_FILE                 1
+#define TO_MEM                  2
 
-//void exf1Cmd(WORD cmd, DWORD addr, WORD data);
+struct _PTP_OBJECT_INFO {
+	DWORD storageId;
+	WORD objectFormat;
+	WORD protectionStatus;
+	DWORD objectCompressedSize;
+	WORD thumbFormat;
+	DWORD thumbCompressedSize;
+	DWORD thumbPixWidth;
+	DWORD thumbPixHeight;
+	DWORD imagePixWidth;
+	DWORD imagePixHeight;
+	DWORD imageBitDepth;
+	DWORD parentObject;
+	WORD associationType;
+	DWORD associationDesc;
+	DWORD sequenceNumber;
+	STRING_DATA_SET *fileName;
+	STRING_DATA_SET *captureDate;
+	STRING_DATA_SET *modificationDate;
+	STRING_DATA_SET *keyWords;
+};
+typedef struct _PTP_OBJECT_INFO PTP_OBJECT_INFO;
+
+usb_dev_handle *open_dev(void);
+
 void exf1Cmd(WORD cmd, ...);
 void usbCmdGen(short int cmd, short int postCmdReads, int nCmdParameters, char cmdParameters[]);
-void usbTx(WORD cmd, WORD cmdType, int nCmdParameterBytes, DWORD cmdParameters);
-void usbRx(); 
-
+void usbTx(WORD cmd, WORD cmdType, int nCmdParameterBytes, DWORD cmdParameter1, DWORD cmdParameter2);
+int usbRx();
+int usbRxToFile(char *fileName);
 
 void printStringDataSet(char *pDescrition, STRING_DATA_SET *pDataSet);
 void printWordDataSet(char *pDescrition, WORD_DATA_SET *pDataSet); 
@@ -275,6 +305,9 @@ void printDeviceInfo();
 void printEnumDataSet(char *pDescrition, ENUM_FORM *pDataSet, WORD dataType);
 void setDeviceProperty(char *pData); 
 void printDeviceProperty();
+
+void setObjectInfo(char *pData);
+void printObjectInfo();
 
 WORD getStringDataSet(STRING_DATA_SET **dst, char *src);
 DWORD getWordDataSet(WORD_DATA_SET **dst, char *src);
@@ -287,6 +320,7 @@ extern char tmp[BUF_SIZE];
 extern char img[IMG_BUF_SIZE];
 extern PTP_DEVICE_INFO deviceInfo;
 extern PTP_DEVICE_PROPERTY deviceProperty;
+extern PTP_OBJECT_INFO objectInfo;
 
 #endif	/* LIBEXF1_H */
 

@@ -76,74 +76,17 @@ void half_shutter(void)
     }
 }
 
-void shutter(char filename[], char thumbnail[])
+void shutter(char fileName[], char thumbNail[])
 {
+    exf1Cmd(CMD_SHUTTER);
 
-  int bytesRead = -1, transfer_jpg = 1;
-  FILE * pFile;
+    usbCmdGen(0x9027, TWO_READS, 0, NULL);
 
-  usbCmdGen(0x9024, NO_READS, 0, NULL);
+    //exf1Cmd(CMD_GET_OBJECT_INFO);
+    exf1Cmd(CMD_GET_OBJECT, TO_FILE, fileName);
+    exf1Cmd(CMD_GET_THUMBNAIL, TO_FILE, thumbNail);
 
-  if (usb_interrupt_read(dev, EP_INT, tmp, 16, TIME_OUT) < 0)
-      printf("error: interrupt read 7 failed\n");
-  if (usb_interrupt_read(dev, EP_INT, tmp, 16, TIME_OUT) < 0)
-      printf("error: interrupt read 8 failed\n");
-
-  usbCmdGen(0x9027, TWO_READS, 0, NULL);
-  usbCmdGen(0x900C, TWO_READS, 8, (char[]){0x01, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0xFF, 0xFF});
-
-  // Get fullsize image.
-  usbCmdGen(0x9025, ONE_READ, 4, (char[]){0x01, 0x00, 0x00, 0x00});
-
-  pFile = fopen (filename, "wb");
-  while (transfer_jpg) {
-
-     bytesRead = usb_bulk_read(dev, EP_IN, img, IMG_BUF_SIZE, TIME_OUT);
-
-     if (bytesRead > 0) {
-
-         if (string_match((char[]){0x25, 0x90, 0x0C, 0x00, 0x00, 0x00}, img+6, 6) == 0) {
-            printf("> Transferring %d bytes... \n", img[0] + (img[1] << 8) + (img[2] << 16) + (img[3] << 24));
-            fwrite(img+12, 1, bytesRead-12, pFile);
-         }
-         else if (string_match((char[]){0x18, 0x00, 0x00, 0x00, 0x03, 0x00, 0x01, 0x20, 0x0C, 0x00, 0x00, 0x00}, img, 12) == 0) {
-            printf("> %s saved to disk. \n", filename);
-            transfer_jpg = 0;
-         }
-         else
-            fwrite(img, 1, bytesRead, pFile);
-     }
-  }
-  fclose (pFile);
-
-  // Get thumbnail image.
-  usbCmdGen(0x9026, NO_READS, 4, (char[]){0x01, 0x00, 0x00, 0x00});
-
-  transfer_jpg = 1;
-
-  pFile = fopen (thumbnail, "wb");
-  while (transfer_jpg) {
-
-     bytesRead = usb_bulk_read(dev, EP_IN, img, BUF_SIZE, TIME_OUT);
-
-     if (bytesRead > 0) {
-
-         if (string_match((char[]){0x26, 0x90, 0x0D, 0x00, 0x00, 0x00}, img+6, 6) == 0) {
-            printf("> Transferring %d bytes... \n", img[0] + (img[1] << 8) + (img[2] << 16) + (img[3] << 24));
-            fwrite(img+12, 1, bytesRead-12, pFile);
-         }
-         else if (string_match((char[]){0x18, 0x00, 0x00, 0x00, 0x03, 0x00, 0x01, 0x20, 0x0D, 0x00, 0x00, 0x00}, img, 12) == 0) {
-            printf("> %s saved to disk. \n", thumbnail);
-            transfer_jpg = 0;
-         }
-         else
-            fwrite(img, 1, bytesRead, pFile);
-     }
-  }
-  fclose (pFile);
-
-  usbCmdGen(0x9028, ONE_READ, 0, NULL);
-
+    usbCmdGen(0x9028, ONE_READ, 0, NULL);
 }
 
 char stillImageEnabled = TRUE;
@@ -217,77 +160,23 @@ void start_config(char enableStillImage, char enablePreRecord)
     preRecordEnabled  = enablePreRecord; 
 }
 
-void movie(char filename[], int delay)
+void movie(char *fileName, int delay)
 {
     char bytes[2];
-    int bytesRead = -1, movSize = 0;
-    int bytesCopied = -1, bytesRemaining = -1;
-    FILE * pFile;
-
-    usbCmdGen(0x9043, ONE_READ, 0, NULL);
+    
+    exf1Cmd(CMD_MOVIE_PRESS);
 
     if (delay >= 0)
       Sleep(1000 * delay);
     else
       printf("> Press enter to stop recording... "), getchar();
 
-    Sleep(2);
-
-    if (preRecordEnabled) {
-        usbCmdGen(0x9044, NO_READS, 0, NULL);
-        do {
-            if (usb_control_msg(dev, 0x82, 0x00, 0x00, 0x81, bytes, 0x2, TIME_OUT) < 0)
-                printf("error: cmd write 1 failed\n");
-
-            if (usb_control_msg(dev, 0x82, 0x00, 0x00, 0x2, bytes, 0x2, TIME_OUT) < 0)
-                printf("error: cmd write 2 failed\n");
-
-        } while (usb_bulk_read(dev, EP_IN, tmp, BUF_SIZE, TIME_OUT) < 0);
-    }
-    else
-        usbCmdGen(0x9044, ONE_READ, 0, NULL);
+    exf1Cmd(CMD_MOVIE_RELEASE, preRecordEnabled);
 
     usbCmdGen(0x9045, TWO_READS, 0, NULL);
-    usbCmdGen(0x900C, TWO_READS, 8, (char[]){0x01, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0xFF, 0xFF});
 
-    do {
-        usbCmdGen(0x9025, NO_READS, 4, (char[]){0x01, 0x00, 0x00, 0x00});
-        bytesRead = usb_bulk_read(dev, EP_IN, img, IMG_BUF_SIZE, TIME_OUT);
-    } while (bytesRead < 0);
-    bytesCopied = bytesRead;
-
-    movSize = GET_DWORD(img);
-    movSize -= 12;
-
-    //printf("Movie file size: %d\n", movSize);
-
-    pFile = fopen (filename, "wb");
-    fwrite(img+12, 1, bytesRead-12, pFile);
-
-    if (movSize > 0) {
-
-        printf("> Transferring %d bytes... \n", movSize);
-        do {
-            
-            bytesRemaining = movSize - bytesCopied + 12;
-
-            do
-               bytesRead = usb_bulk_read(dev, EP_IN, img, IMG_BUF_SIZE, TIME_OUT);
-            while (bytesRead < 0);
-            bytesCopied += bytesRead;
-            bytesRemaining -= bytesRead;
-            fwrite(img, 1, bytesRead, pFile);
-            
-            //printf("bytesCopied=%d bytesRemaining=%d\n", bytesCopied, bytesRemaining);
-
-        } while (bytesRemaining > 0);
-        usb_bulk_read(dev, EP_IN, img, IMG_BUF_SIZE, TIME_OUT);
-
-    } else
-       printf("Error: Negative MOV size!\n");
-
-    fclose (pFile);
-    printf("> %s saved to disk. \n", filename);
+    //exf1Cmd(CMD_GET_OBJECT_INFO);
+    exf1Cmd(CMD_GET_OBJECT, TO_FILE, fileName);
 
     if (preRecordEnabled) {
         usbCmdGen(0x9046, NO_READS, 0, NULL);
