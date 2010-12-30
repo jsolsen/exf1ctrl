@@ -1,42 +1,14 @@
 #include "exf1api.h"
 
+char halfShutterPressed = FALSE;
+char stillImageEnabled = TRUE;
+char preRecordEnabled  = FALSE;
+char continousShutterEnabled = FALSE; 
+
 int init_camera(void)
 {
-    usb_init();
-    usb_find_busses();
-    usb_find_devices();
-
-    if(!(dev = open_dev())) {
-      printf(" Error: camera not found!\n");
-      return 0;
-    }
-
-    if(usb_set_configuration(dev, 1) < 0) {
-      printf(" Error: setting config 1. \n");
-      usb_close(dev);
-      return 0;
-    }
-
-    if(usb_claim_interface(dev, 0) < 0) {
-      printf(" Error: claiming interface 0 failed. \n");
-      usb_close(dev);
-      return 0;
-    }
-
-    if (usb_control_msg(dev, 0x21, 0x66, 0x00, 0x00, NULL, 0, TIME_OUT) < 0)
-      printf("error: cmd write 1 failed\n");
-
-    if (usb_interrupt_read(dev, EP_INT, tmp, 16, TIME_OUT) < 0)
-      //printf("error: interrupt read 1 failed\n");
-
-    if (usb_clear_halt(dev, EP_IN) < 0)
-      printf("error: halt clear failed.\n");
-
-    if (usb_clear_halt(dev, EP_OUT) < 0)
-      printf("error: halt clear failed.\n");
-
-    if (usb_control_msg(dev, 0xA1, 0x67, 0x00, 0x00, &tmp[0], 0x0400, TIME_OUT) < 0)
-      printf("error: cmd write 2 failed\n");
+    if (usbInit() == 0)
+        exit(0);
 
     // Print out device info.
     //exf1Cmd(CMD_GET_DEVICE_INFO);
@@ -62,7 +34,51 @@ int init_camera(void)
     return 1;
 }
 
-char halfShutterPressed = FALSE; 
+void zoom(char zoomIn, char continousZoom) {
+
+    if (continousZoom) {
+        printf("> Press enter to stop zooming...");
+        if (zoomIn) {
+            exf1Cmd(CMD_CZ_PRESS, DATA_ZOOM_IN);
+            getchar();
+            exf1Cmd(CMD_CZ_RELEASE);
+        }
+        else {
+            exf1Cmd(CMD_CZ_PRESS, DATA_ZOOM_OUT);
+            getchar(); 
+            exf1Cmd(CMD_CZ_RELEASE);
+        }
+    }
+    else {
+        if (zoomIn)
+            exf1Cmd(CMD_ZOOM, DATA_ZOOM_IN);
+        else
+            exf1Cmd(CMD_ZOOM, DATA_ZOOM_OUT);
+    }
+}
+
+void focus(char focusIn, char continousFocus) {
+
+    if (continousFocus) {
+        printf("> Press enter to stop focusing...");
+        if (focusIn) {
+            exf1Cmd(CMD_CF_PRESS, DATA_FOCUS_IN);
+            getchar(); 
+            exf1Cmd(CMD_CF_RELEASE);
+        }
+        else {
+            exf1Cmd(CMD_CF_PRESS, DATA_FOCUS_OUT);
+            getchar(); 
+            exf1Cmd(CMD_CF_RELEASE);
+        }
+    }
+    else {
+        if (focusIn)
+            exf1Cmd(CMD_FOCUS, DATA_FOCUS_IN);
+        else
+            exf1Cmd(CMD_FOCUS, DATA_FOCUS_OUT);
+    }
+}
 
 void half_shutter(void)
 {
@@ -76,26 +92,68 @@ void half_shutter(void)
     }
 }
 
-void shutter(char fileName[], char thumbNail[])
+void shutter(char *fileName, char *thumbNail, int delay)
 {
-    exf1Cmd(CMD_SHUTTER);
+    int i;
+    //char newFileName[255], newThumbNail[255];
 
-    usbCmdGen(0x9027, TWO_READS, 0, NULL);
+    if (continousShutterEnabled) {
+        exf1Cmd(CMD_CS_PRESS);
+        if (delay >= 0)
+            Sleep(1000 * delay);
+        else
+            printf("> Press enter to stop recording... "), getchar();
+        exf1Cmd(CMD_CS_RELEASE, preRecordEnabled);
+    }
+    else 
+        exf1Cmd(CMD_SHUTTER);
 
-    //exf1Cmd(CMD_GET_OBJECT_INFO);
-    exf1Cmd(CMD_GET_OBJECT, TO_FILE, fileName);
-    exf1Cmd(CMD_GET_THUMBNAIL, TO_FILE, thumbNail);
+    exf1Cmd(CMD_GET_STILL_HANDLES);
+    
+    if (continousShutterEnabled) {
+        for (i=0; i<objectHandles->noItems; i++) {
 
-    usbCmdGen(0x9028, ONE_READ, 0, NULL);
+            // Generate new file name.
+            /*
+            strncpy(newFileName, fileName, strlen(fileName)-4);
+            sprintf(newFileName, "%s-%04d.jpg", newFileName);
+            strncpy(newThumbNail, thumbNail, strlen(thumbNail)-4);
+            sprintf(newThumbNail, "%s-%04d.jpg", newThumbNail);
+*/
+            printf("> Downloading %s and %s...\n", fileName, thumbNail);
+
+            exf1Cmd(CMD_GET_OBJECT_INFO, objectHandles->data[i]);
+            exf1Cmd(CMD_GET_OBJECT,    TO_FILE, objectHandles->data[i], fileName);
+            exf1Cmd(CMD_GET_THUMBNAIL, TO_FILE, objectHandles->data[i], thumbNail);
+
+        }
+    }
+    else {
+        exf1Cmd(CMD_GET_OBJECT_INFO, objectHandles->data[0]);
+        exf1Cmd(CMD_GET_OBJECT,    TO_FILE, objectHandles->data[0], fileName);
+        exf1Cmd(CMD_GET_THUMBNAIL, TO_FILE, objectHandles->data[0], thumbNail);
+    }
+
+    exf1Cmd(CMD_STILL_RESET);
 }
 
-char stillImageEnabled = TRUE;
-char preRecordEnabled  = FALSE;
-
-void setup_movie_hs(char enablePreRecord)
+void setup_shutter(SHUTTER_MODES shutterMode, char enablePreRecord)
 {
     stop_config();
-    exf1Cmd(CMD_WRITE, ADDR_MOVIE_MODE, DATA_MOVIE_MODE_HS);
+    switch(shutterMode) {
+        case SHUTTER_NORMAL:
+            exf1Cmd(CMD_WRITE, ADDR_CAPTURE_MODE, DATA_CAPTURE_NORMAL);
+            continousShutterEnabled = FALSE;
+            break;
+        case SHUTTER_CONTINOUS:
+            exf1Cmd(CMD_WRITE, ADDR_CAPTURE_MODE, DATA_CAPTURE_CS);
+            continousShutterEnabled = TRUE;
+            break;
+        case SHUTTER_PRERECORD:
+            exf1Cmd(CMD_WRITE, ADDR_CAPTURE_MODE, DATA_CAPTURE_PREREC);
+            continousShutterEnabled = TRUE;
+            break;
+    }
     start_config(FALSE, enablePreRecord);
 
     // Verify that ADDR_HS_SETTING is set to something valid?
@@ -106,10 +164,20 @@ void setup_movie_hs(char enablePreRecord)
     start_config(FALSE, enablePreRecord);
 }
 
-void setup_movie_hd(char enablePreRecord)
+void setup_movie(MOVIE_MODES movieMode, char enablePreRecord)
 {
     stop_config();
-    exf1Cmd(CMD_WRITE, ADDR_MOVIE_MODE, DATA_MOVIE_MODE_HD);
+    switch (movieMode) {
+        case MOVIE_STD:
+            exf1Cmd(CMD_WRITE, ADDR_MOVIE_MODE, DATA_MOVIE_MODE_STD);
+            break;    
+        case MOVIE_HD:
+            exf1Cmd(CMD_WRITE, ADDR_MOVIE_MODE, DATA_MOVIE_MODE_HD);
+            break;
+        case MOVIE_HS:
+            exf1Cmd(CMD_WRITE, ADDR_MOVIE_MODE, DATA_MOVIE_MODE_HS);
+            break;
+    }
     start_config(FALSE, enablePreRecord);
 
     // Verify that ADDR_HS_SETTING is set to something valid?
@@ -141,6 +209,13 @@ void setup_exposure(WORD exposure)
     start_config(stillImageEnabled, preRecordEnabled);
 }
 
+void setup_focus(WORD focus)
+{
+    stop_config();
+    exf1Cmd(CMD_WRITE, ADDR_FOCUS, focus);
+    start_config(stillImageEnabled, preRecordEnabled);
+}
+
 void stop_config()
 {
     if (stillImageEnabled)
@@ -167,31 +242,15 @@ void movie(char *fileName, int delay)
     exf1Cmd(CMD_MOVIE_PRESS);
 
     if (delay >= 0)
-      Sleep(1000 * delay);
+        Sleep(1000 * delay);
     else
-      printf("> Press enter to stop recording... "), getchar();
+        printf("> Press enter to stop recording... "), getchar();
 
     exf1Cmd(CMD_MOVIE_RELEASE, preRecordEnabled);
-
-    usbCmdGen(0x9045, TWO_READS, 0, NULL);
-
-    //exf1Cmd(CMD_GET_OBJECT_INFO);
-    exf1Cmd(CMD_GET_OBJECT, TO_FILE, fileName);
-
-    if (preRecordEnabled) {
-        usbCmdGen(0x9046, NO_READS, 0, NULL);
-        do {
-            if (usb_control_msg(dev, 0x82, 0x00, 0x00, 0x81, bytes, 0x2, TIME_OUT) < 0)
-                printf("error: cmd write 1 failed\n");
-
-            if (usb_control_msg(dev, 0x82, 0x00, 0x00, 0x2, bytes, 0x2, TIME_OUT) < 0)
-                printf("error: cmd write 2 failed\n");
-
-        } while (usb_bulk_read(dev, EP_IN, tmp, BUF_SIZE, TIME_OUT) < 0);
-    }
-    else
-        usbCmdGen(0x9046, ONE_READ, 0, NULL);
-
+    exf1Cmd(CMD_GET_MOVIE_HANDLES);
+    exf1Cmd(CMD_GET_OBJECT_INFO, objectHandles->data[0]);
+    exf1Cmd(CMD_GET_OBJECT, TO_FILE, objectHandles->data[0], fileName);
+    exf1Cmd(CMD_MOVIE_RESET, preRecordEnabled);
 }
 
 void setup_pc_monitor(void)

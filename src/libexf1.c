@@ -5,33 +5,18 @@ char tmp[BUF_SIZE];
 char img[IMG_BUF_SIZE];
 PTP_DEVICE_INFO deviceInfo;
 PTP_DEVICE_PROPERTY deviceProperty;
-PTP_OBJECT_INFO objectInfo; 
-
-usb_dev_handle *open_dev(void)
-{
-  struct usb_bus *bus;
-  struct usb_device *dev;
-
-  for(bus = usb_get_busses(); bus; bus = bus->next)
-    {
-      for(dev = bus->devices; dev; dev = dev->next)
-        {
-          if(dev->descriptor.idVendor == MY_VID
-             && dev->descriptor.idProduct == MY_PID)
-            {
-              return usb_open(dev);
-            }
-        }
-    }
-  return NULL;
-}
-
-unsigned int USB_CMD_ID = 0xFFFFFFFF;
+PTP_OBJECT_INFO objectInfo;
+DWORD_DATA_SET *objectHandles;
+PTP_CONTAINER *rx; 
+DWORD zoomSetting;
+DWORD focusSetting;
+DWORD USB_CMD_ID = 0xFFFFFFFF;
 
 void exf1Cmd(WORD cmd, ...)
 {
-    DWORD dwordVal; WORD wordVal;
-    char bytes[2], *pString;
+    DWORD dwordVal;
+    WORD wordVal;
+    char *pString;
 
     va_list ap;
     va_start(ap, cmd);
@@ -45,11 +30,9 @@ void exf1Cmd(WORD cmd, ...)
             usbRx();
 
             if (dwordVal == ADDR_FUNCTIONALITY) {
-                if (usb_interrupt_read(dev, EP_INT, tmp, 16, TIME_OUT) < 0)
-                  printf(" Error: interrupt read 1 after setting ADDR_FUNCTIONALITY failed\n");
-
-                if (usb_interrupt_read(dev, EP_INT, tmp, 16, TIME_OUT) < 0)
-                  printf(" Error: interrupt read 2 after setting ADDR_FUNCTIONALITY failed\n");
+                //do
+                    usbRxEvent();
+                //while (rx->code != EVT_DEVICE_INFO_CHANGED);
             }
 
             break;
@@ -57,35 +40,31 @@ void exf1Cmd(WORD cmd, ...)
         case CMD_READ:
             break;
 
+        case CMD_MOVIE_RESET: 
+        case CMD_CS_RELEASE:
         case CMD_MOVIE_RELEASE:
         case CMD_STILL_START:
         case CMD_MOVIE_START:
             dwordVal = va_arg(ap, int);
             usbTx(cmd, TYPE_CMD, sizeof(dwordVal), (DWORD) dwordVal, 0);
             if (dwordVal) { // PreRecordEnabled...
-                do {
-                    if (usb_control_msg(dev, 0x82, 0x00, 0x00, 0x81, bytes, 0x2, TIME_OUT) < 0)
-                        printf("error: cmd write 1 failed\n");
-
-                    if (usb_control_msg(dev, 0x82, 0x00, 0x00, 0x2, bytes, 0x2, TIME_OUT) < 0)
-                        printf("error: cmd write 2 failed\n");
-                    //Sleep(1000);
-                } while (usbRx() < 0);
+                do
+                    usbGetStatus();
+                while (usbRx() < 0);
             }
             else
                 usbRx();
             break;
 
+        case CMD_CS_PRESS:
         case CMD_SHUTTER:
         case CMD_HALF_PRESS:
             usbTx(cmd, TYPE_CMD, 0, 0, 0);
-            if (usb_interrupt_read(dev, EP_INT, tmp, 16, TIME_OUT) < 0)
-                printf(" Error: Interrupt read 1 failed! \n");
-            if (usb_interrupt_read(dev, EP_INT, tmp, 16, TIME_OUT) < 0)
-                printf(" Error: Interrupt read 2 failed! \n");
+            usbRxEvent();
             usbRx();
             break;
 
+        case CMD_STILL_RESET:
         case CMD_MOVIE_PRESS:
         case CMD_CLOSE_SESSION:
         case CMD_HALF_RELEASE:
@@ -95,6 +74,24 @@ void exf1Cmd(WORD cmd, ...)
             usbRx();
             break;
 
+        case CMD_CF_PRESS:
+        case CMD_CZ_PRESS:
+            dwordVal = va_arg(ap, int);
+            usbTx(cmd, TYPE_CMD, 2*sizeof(dwordVal), (DWORD) dwordVal, 0);
+            usbRx();
+            break;
+        
+        case CMD_CF_RELEASE:
+        case CMD_CZ_RELEASE:
+        case CMD_ZOOM:
+        case CMD_FOCUS:
+            dwordVal = va_arg(ap, int);
+            usbTx(cmd, TYPE_CMD, 2*sizeof(dwordVal), (DWORD) dwordVal, 0);
+            while (usbRxEvent() > 0);
+            usbRx();
+            while (usbRxEvent() > 0);
+            break;
+
         case CMD_OPEN_SESSION:
             USB_CMD_ID = 0;
             dwordVal = va_arg(ap, int);
@@ -102,6 +99,8 @@ void exf1Cmd(WORD cmd, ...)
             usbRx();
             break;
 
+        case CMD_GET_STILL_HANDLES:
+        case CMD_GET_MOVIE_HANDLES:
         case CMD_GET_DEVICE_INFO:
             usbTx(cmd, TYPE_CMD, 0, 0, 0);
             usbRx();
@@ -109,7 +108,8 @@ void exf1Cmd(WORD cmd, ...)
             break;
 
         case CMD_GET_OBJECT_INFO:
-            usbTx(cmd, TYPE_CMD, 2*sizeof(DWORD), 0x00000001, 0xFFFFFFFF); 
+            dwordVal = va_arg(ap, int);
+            usbTx(cmd, TYPE_CMD, 2*sizeof(DWORD), dwordVal, 0xFFFFFFFF);
             usbRx();
             usbRx();
             break;
@@ -123,12 +123,14 @@ void exf1Cmd(WORD cmd, ...)
 
         case CMD_GET_THUMBNAIL:
         case CMD_GET_OBJECT:
-            dwordVal = va_arg(ap, int); // File/memory destination. 
-            usbTx(cmd, TYPE_CMD, sizeof(DWORD), 0x00000001, 0); // Fixed objectHandle!
-            switch (dwordVal) {
+            wordVal  = va_arg(ap, int); // File/memory destination.
+            dwordVal = va_arg(ap, int); // objectHandle
+            usbTx(cmd, TYPE_CMD, sizeof(DWORD), dwordVal, 0);
+            switch (wordVal) {
                 case TO_FILE:
                     pString = (char *) va_arg(ap, int);
-                    usbRxToFile(pString);
+                    if (usbRxToFile(pString) < 0);
+                        usbRxToFile(pString);
                     break;
                 case TO_MEM:
                     break;
@@ -180,12 +182,17 @@ void usbTx(WORD cmd, WORD cmdType, int nCmdParameterBytes, DWORD cmdParameter1, 
 
 int usbRx() {
 
-    int bytesRead = usb_bulk_read(dev, EP_IN, tmp, BUF_SIZE, TIME_OUT);
-                        int i;
-                        char *pTx;
+    int i, bytesRead = usb_bulk_read(dev, EP_IN, tmp, BUF_SIZE, TIME_OUT);
+    rx = (PTP_CONTAINER *) tmp;
+    
     if (bytesRead > 0) {
-        PTP_CONTAINER *rx = (PTP_CONTAINER *) tmp;
-
+/*
+        printf("usbRx: 0x%04X 0x%04X\n", rx->code, rx->type);
+        char *pTx = rx->payload.data;
+        for (i=0; i<rx->length-12; i++)
+            printf("%02X-", 0xFF & *(pTx + i));
+        printf("\n");
+*/
         switch (rx->type) {
             case TYPE_DATA:
                 switch (rx->code) {
@@ -201,12 +208,19 @@ int usbRx() {
 
                     case CMD_GET_OBJECT_INFO:
                         setObjectInfo(rx->payload.data);
-                        printObjectInfo();
+                        //printObjectInfo();
                         break;
 
+                    case CMD_GET_STILL_HANDLES:
+                    case CMD_GET_MOVIE_HANDLES:
+                        free(objectHandles);
+                        getDwordDataSet(&objectHandles, rx->payload.data);
+                        //printDwordDataSet("ObjectHandles   : ", objectHandles);
+                        break; 
+
                     default:
-                        printf("Unhandled data package: 0x%04X\n", rx->type);
-                        pTx = rx->payload.data;
+                        printf("Unhandled data package (usbRx): 0x%04X 0x%04X ", rx->code, rx->type);
+                        char *pTx = rx->payload.data;
                         for (i=0; i<rx->length-12; i++)
                             printf("%02X-", 0xFF & *(pTx + i));
                         printf("\n");
@@ -215,10 +229,17 @@ int usbRx() {
             case TYPE_RESPONSE:
                 if (rx->code != CMD_OK) printf("Ack = %02X.\n", rx->code);
                 break;
+                /*
             case TYPE_EVENT:
                 printf("Read an event message.\n");
-                usbRx();
+                //usbRx();
+                if (usb_interrupt_read(dev, EP_INT, tmp, 16, TIME_OUT) < 0)
+                    printf(" Error: interrupt read failed!\n");
+                bytesRead = rx->code; 
                 break;
+                 * */
+            default:
+                printf("Unknown message type: 0x%04x\n", 0xFFFF & rx->type);
         }
     }
     else if (bytesRead != -116) {
@@ -233,25 +254,87 @@ int usbRxToFile(char *fileName) {
     
     int bytesRead = usb_bulk_read(dev, EP_IN, img, IMG_BUF_SIZE, TIME_OUT);
     int bytesRemaining = -1, objectSize = 0;
+    rx = (PTP_CONTAINER *) img;
 
     if (bytesRead > 0) {
 
-        PTP_CONTAINER *rx = (PTP_CONTAINER *) img; 
-        objectSize = rx->length-12;
-
-        pFile = fopen(fileName, "wb");
-        fwrite(rx->payload.data, 1, bytesRead-12, pFile);
-
-        printf("> Transferring %d bytes... \n", objectSize);
-        for (bytesRemaining = rx->length - bytesRead; bytesRemaining > 0; bytesRemaining -= bytesRead) {
-            do bytesRead = usb_bulk_read(dev, EP_IN, img, IMG_BUF_SIZE, TIME_OUT);
-            while (bytesRead < 0);
-            fwrite(img, 1, bytesRead, pFile);
+        switch (rx->type) {
+            case TYPE_DATA:
+                objectSize = rx->length-12;
+                pFile = fopen(fileName, "wb");
+                fwrite(rx->payload.data, 1, bytesRead-12, pFile);
+                printf("> Transferring %d bytes... \n", objectSize);
+                for (bytesRemaining = rx->length - bytesRead; bytesRemaining > 0; bytesRemaining -= bytesRead) {
+                    do bytesRead = usb_bulk_read(dev, EP_IN, img, IMG_BUF_SIZE, TIME_OUT);
+                    while (bytesRead < 0);
+                    fwrite(img, 1, bytesRead, pFile);
+                }
+                fclose (pFile);
+                printf("> %s saved to disk. \n", fileName);
+                break;
+            case TYPE_RESPONSE:
+                if (rx->code != CMD_OK) printf("Ack = %02X.\n", rx->code);
+                break;
+            default:
+                printf("Unhandled data package (usbRxToFile): 0x%04X 0x%04X\n", rx->type, rx->code);
+                char *pTx = rx->payload.data; 
+                int i;
+                for (i=0; i<rx->length-12; i++)
+                    printf("%02X-", 0xFF & *(pTx + i));
+                printf("\n");
+                break; 
         }
-        fclose (pFile);
-        printf("> %s saved to disk. \n", fileName);
     }
     return bytesRemaining;
+}
+
+int usbRxEvent(){
+
+    int bytesRead = usb_interrupt_read(dev, EP_INT, tmp, 24, TIME_OUT/5);
+    rx = (PTP_CONTAINER *) tmp;
+
+    if (bytesRead > 0) {
+/*
+        printf("usbRxEvent: 0x%04X 0x%04X\n", rx->code, rx->type);
+        char *pTx = rx->payload.data;
+        for (i=0; i<rx->length-12; i++)
+            printf("%02X-", 0xFF & *(pTx + i));
+        printf("\n");
+*/
+        if (rx->type == TYPE_EVENT) {
+            switch (rx->code) {
+                case EVT_FOCUS_CHANGED:
+                    focusSetting = rx->payload.dword_params.param1;
+                    break;
+                case EVT_FOCUS_OK:
+                case EVT_DEVICE_INFO_CHANGED:
+                    break;
+                case EVT_ZOOM_CHANGED:
+                    zoomSetting = rx->payload.dword_params.param1;
+                    break;
+                default:
+                    printf("Unhandled event code: 0x%04x\n", rx->code);
+            }
+        }
+        else
+            printf("Not an event message!\n");
+    }
+    else if (bytesRead != -116)
+        printf(" Error: interrupt read failed: %s!\n", usb_strerror());
+
+    return bytesRead;
+}
+
+void usbGetStatus() {
+
+    char statusBytes[2];
+    
+    if (usb_control_msg(dev, 0x82, 0x00, 0x00, 0x81, statusBytes, 0x2, TIME_OUT) < 0)
+        printf("error: cmd write 1 failed\n");
+
+    if (usb_control_msg(dev, 0x82, 0x00, 0x00, 0x2, statusBytes, 0x2, TIME_OUT) < 0)
+        printf("error: cmd write 2 failed\n");
+
 }
 
 WORD getStringDataSet(STRING_DATA_SET **dst, char *src) {
@@ -272,6 +355,18 @@ DWORD getWordDataSet(WORD_DATA_SET **dst, char *src) {
     WORD_DATA_SET *wds = (WORD_DATA_SET *) src;
 
     byteSize = (wds->noItems + 2) * sizeof(WORD);
+    *dst     = malloc(byteSize);
+    memcpy(*dst, wds, byteSize);
+
+    return byteSize;
+}
+
+DWORD getDwordDataSet(DWORD_DATA_SET **dst, char *src) {
+
+    DWORD byteSize;
+    DWORD_DATA_SET *wds = (DWORD_DATA_SET *) src;
+
+    byteSize = (wds->noItems + 1) * sizeof(DWORD);
     *dst     = malloc(byteSize);
     memcpy(*dst, wds, byteSize);
 
@@ -325,7 +420,17 @@ void printWordDataSet(char *pDescrition, WORD_DATA_SET *pDataSet) {
     int i;
     printf("%s", pDescrition);
     for (i=0; i<pDataSet->noItems; i++)
-        printf("0x%02X, ", pDataSet->data[i]);
+        printf("0x%04X, ", pDataSet->data[i]);
+    printf("\n");
+
+}
+
+void printDwordDataSet(char *pDescrition, DWORD_DATA_SET *pDataSet) {
+
+    int i;
+    printf("%s", pDescrition);
+    for (i=0; i<pDataSet->noItems; i++)
+        printf("0x%08X, ", pDataSet->data[i]);
     printf("\n");
 
 }
@@ -717,13 +822,13 @@ void usbCmdGen(short int cmd, short int postCmdReads, int nCmdParameters, char c
 
     for (i=0; i<postCmdReads; i++) {
         bytesRead = usb_bulk_read(dev, EP_IN, tmp, BUF_SIZE, TIME_OUT);
-/*
+
         char *pTx = tmp;
         int j; 
         for (j=0; j<bytesRead; j++)
             printf("%02X-", 0xFF & *(pTx + j));
         printf("\n");
- */
+
         if (bytesRead < 0)
             printf("Error: Bulk read failed for this command: %02X!\n", 0xFFFF & cmd);
     }
@@ -731,3 +836,62 @@ void usbCmdGen(short int cmd, short int postCmdReads, int nCmdParameters, char c
     USB_CMD_ID++;
 }
 
+int usbInit() {
+    usb_init();
+    usb_find_busses();
+    usb_find_devices();
+
+    if(!(dev = open_dev())) {
+      printf(" Error: camera not found!\n");
+      return 0;
+    }
+
+    if(usb_set_configuration(dev, 1) < 0) {
+      printf(" Error: setting config 1. \n");
+      usb_close(dev);
+      return 0;
+    }
+
+    if(usb_claim_interface(dev, 0) < 0) {
+      printf(" Error: claiming interface 0 failed. \n");
+      usb_close(dev);
+      return 0;
+    }
+
+    // DeviceReset.
+    if (usb_control_msg(dev, 0x21, 0x66, 0x00, 0x00, NULL, 0, TIME_OUT) < 0)
+      printf("error: cmd write 1 failed\n");
+
+    usbRxEvent();
+
+    if (usb_clear_halt(dev, EP_IN) < 0)
+      printf("error: halt clear failed.\n");
+
+    if (usb_clear_halt(dev, EP_OUT) < 0)
+      printf("error: halt clear failed.\n");
+
+    // GetDeviceStatus.
+    if (usb_control_msg(dev, 0xA1, 0x67, 0x00, 0x00, &tmp[0], 0x0400, TIME_OUT) < 0)
+      printf("error: cmd write 2 failed\n");
+      
+    return 1; 
+}
+
+usb_dev_handle *open_dev(void)
+{
+  struct usb_bus *bus;
+  struct usb_device *dev;
+
+  for(bus = usb_get_busses(); bus; bus = bus->next)
+    {
+      for(dev = bus->devices; dev; dev = dev->next)
+        {
+          if(dev->descriptor.idVendor == MY_VID
+             && dev->descriptor.idProduct == MY_PID)
+            {
+              return usb_open(dev);
+            }
+        }
+    }
+  return NULL;
+}

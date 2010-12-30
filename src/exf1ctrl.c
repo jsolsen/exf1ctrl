@@ -12,8 +12,8 @@
 
 int main(int argc, char** argv)
 {
-   char i, input[64], com, name[32], tname[32];
-   int arg, nargs, addr, val;
+   char input[64], com, name[32], tname[32];
+   int arg, nargs, addr, val, i;
  
    printf(" \n");
    printf(" ********************************************************************\n");
@@ -64,7 +64,7 @@ int main(int argc, char** argv)
    printf("          3: Infinity.\n");
    printf("          4: Manual.\n");
    printf("\n");
-   printf(" Hint: h activates half-press.\n");
+   printf(" Hint: h activates half press.\n");
    printf("\n");
    printf(" Hint: i [x] sets iso (x = 1-6).\n");
    printf("          1: Auto (default).\n");
@@ -75,9 +75,18 @@ int main(int argc, char** argv)
    printf("          6: 1600.\n");
    printf("\n");
    printf(" Hint: q quits this program.\n");
+   printf("\n");
    printf(" Hint: m [x [y]] records a x second long movie called y.\n");
-   printf(" Hint: s [x [y]] activates shutter and stores a picture called x\n");
-   printf("       and a thumbnail called y.\n");
+   printf("\n");
+   printf(" Hint: s [x [y [z]]] activates shutter and stores a picture called x\n");
+   printf("       and a thumbnail called y. If the continous shutter is enabled\n");
+   printf("       (modes 2 and 3), z determines the shutter duration.\n");
+   printf("\n");
+   printf(" Hint: v [x [y]] focus y steps. x=in focuses in and x=out focuses out.\n");
+   printf("       Continous focus is used if y is not defined.\n");
+   printf("\n");
+   printf(" Hint: z [x [y]] zooms y steps. x=in zooms in and x=out zooms out.\n");
+   printf("       Continous zoom is used if y is not defined.\n");
    printf("\n");
    printf("\n");
    printf("> Initializing camera... \n");
@@ -135,19 +144,34 @@ int main(int argc, char** argv)
 
          case 'c': 
             nargs = sscanf(input, "%c %d", &com, &arg);
-            printf("> Configuring mode / movie mode... \n");
+            printf("> Configuring shutter mode / movie mode... \n");
             switch (arg) {
+                case 1:
+                    setup_shutter(SHUTTER_NORMAL, FALSE);
+                    break;
+                case 2:
+                    setup_shutter(SHUTTER_CONTINOUS, FALSE);
+                    break;
+                case 3:
+                    setup_shutter(SHUTTER_NORMAL, TRUE);
+                    break;
+                case 4:
+                    setup_movie(MOVIE_STD, FALSE);
+                    break;
+                case 5:
+                    setup_movie(MOVIE_STD, TRUE);
+                    break;
                 case 6:
-                    setup_movie_hd(FALSE);
+                    setup_movie(MOVIE_HD, FALSE);
                     break; 
                 case 7:
-                    setup_movie_hd(TRUE);
+                    setup_movie(MOVIE_HD, TRUE);
                     break; 
                 case 8:
-                    setup_movie_hs(FALSE);
+                    setup_movie(MOVIE_HS, FALSE);
                     break; 
                 case 9:
-                    setup_movie_hs(TRUE);
+                    setup_movie(MOVIE_HS, TRUE);
                     break;
                 default:
                     printf("> This mode is yet to be supported. \n");
@@ -171,9 +195,30 @@ int main(int argc, char** argv)
                  setup_exposure(DATA_EXPOSURE_S);
                  break;
                default:
-                 printf("> Unknown exposure setting. \n");
+                 printf("> Unknown focus setting. \n");
             }
             break; 
+
+          case 'f':
+            nargs = sscanf(input, "%c %d", &com, &arg);
+            printf("> Configuring focus... \n");
+            switch (arg) {
+               case 1:
+                 setup_focus(DATA_FOCUS_AF);
+                 break;
+               case 2:
+                 setup_focus(DATA_FOCUS_MACRO);
+                 break;
+               case 3:
+                 setup_focus(DATA_FOCUS_INFINITY);
+                 break;
+               case 4:
+                 setup_focus(DATA_FOCUS_MANUAL);
+                 break;
+               default:
+                 printf("> Unknown exposure setting. \n");
+            }
+            break;
 
          case 'h':
             printf("> Half press... \n");
@@ -225,15 +270,52 @@ int main(int argc, char** argv)
             return 0;    
             
          case 's':
-            nargs = sscanf(input, "%c %s %s", &com, &name, &tname);
-            printf("> Taking picture... \n");   
-            if (nargs == 3) 
-               shutter(strcat(name,".jpg"), strcat(tname,".jpg"));
-            else if (nargs == 2) 
-               shutter(strcat(name,".jpg"), strcat(name, "_thumb.jpg"));
-            else
-               shutter("CIMG001.jpg", "CIMG001_thumb.jpg");
-            break; 
+            nargs = sscanf(input, "%c %s %s %d", &com, &name, &tname, &arg);
+            printf("> Taking picture... \n");
+            switch (nargs) {
+                case 1: 
+                    shutter("CIMG001.jpg", "CIMG001_thumb.jpg", -1);
+                    break; 
+                case 2: 
+                    shutter(strcat(name,".jpg"), strcat(name, "_thumb.jpg"), -1);     
+                    break; 
+                case 3:
+                    shutter(strcat(name,".jpg"), strcat(tname,".jpg"), -1);
+                    break; 
+                case 4:
+                    shutter(strcat(name,".jpg"), strcat(tname,".jpg"), arg);
+                    break; 
+            }
+            break;
+
+         case 'v':
+            nargs = sscanf(input, "%c %s %d", &com, &name, &arg);
+            printf("> Focusing... \n");
+
+            switch (nargs) {
+                case 1:
+                    focus(TRUE, TRUE);
+                    break;
+                case 2:
+                    if (strcmp(name, "in") == 0)
+                        focus(TRUE, TRUE);
+                    else if (strcmp(name, "out") == 0)
+                        focus(FALSE, TRUE);
+                    else
+                        printf("> Unrecognized parameter: %s!\n", name);
+                    break;
+                case 3:
+                    if (strcmp(name, "in") == 0)
+                        for (i=0; i<arg; i++)
+                            focus(TRUE, FALSE);
+                    else if (strcmp(name, "out") == 0)
+                        for (i=0; i<arg; i++)
+                            focus(FALSE, FALSE);
+                    else
+                        printf("> Unrecognized parameter: %s!\n", name);
+                    break;
+            }
+            break;
 
          case 'x':
             nargs = sscanf(input, "%c %x %x", &com, &addr, &val);
@@ -243,6 +325,35 @@ int main(int argc, char** argv)
             }
             else
                printf("> Three arguments required... \n");
+            break;
+
+         case 'z':
+            nargs = sscanf(input, "%c %s %d", &com, &name, &arg);
+            printf("> Zooming... \n");
+
+            switch (nargs) {
+                case 1:
+                    zoom(TRUE, TRUE);
+                    break;
+                case 2:
+                    if (strcmp(name, "in") == 0)
+                        zoom(TRUE, TRUE);
+                    else if (strcmp(name, "out") == 0)
+                        zoom(FALSE, TRUE);
+                    else
+                        printf("> Unrecognized parameter: %s!\n", name);
+                    break;
+                case 3:
+                    if (strcmp(name, "in") == 0)
+                        for (i=0; i<arg; i++)
+                            zoom(TRUE, FALSE);
+                    else if (strcmp(name, "out") == 0)
+                        for (i=0; i<arg; i++)
+                            zoom(FALSE, FALSE);
+                    else
+                        printf("> Unrecognized parameter: %s!\n", name);
+                    break;
+            }
             break;
 
          default: 

@@ -39,7 +39,6 @@
 #define SET_WORD(ptr, val)  ({*ptr = (val & 0xFF); *(ptr+1) = (val & 0xFF00) >> 8;})
 #define SET_DWORD(ptr, val) ({*ptr = (val & 0xFF); *(ptr+1) = (val & 0xFF00) >> 8; *(ptr+2) = (val & 0xFF0000) >> 16; *(ptr+3) = (val & 0xFF000000) >> 24;})
 
-
 #define SESSION_ID          0x19760615
 
 #define CMD_GET_DEVICE_INFO 0x1001
@@ -56,16 +55,29 @@
 #define CMD_STILL_START     0x9001
 #define CMD_STILL_STOP      0x9002
 
+#define CMD_FOCUS           0x9007
+#define CMD_CF_PRESS        0x9009
+#define CMD_CF_RELEASE      0x900A
 #define CMD_GET_OBJECT_INFO 0x900C
 
 #define CMD_SHUTTER         0x9024
+#define CMD_GET_STILL_HANDLES 0x9027
+#define CMD_STILL_RESET     0x9028
 #define CMD_HALF_PRESS      0x9029
 #define CMD_HALF_RELEASE    0x902A
+#define CMD_CS_PRESS        0x902B
+#define CMD_CS_RELEASE      0x902C
+
+#define CMD_ZOOM            0x902D
+#define CMD_CZ_PRESS        0x902E
+#define CMD_CZ_RELEASE      0x902F
 
 #define CMD_MOVIE_START     0x9041
 #define CMD_MOVIE_STOP      0x9042
 #define CMD_MOVIE_PRESS     0x9043
 #define CMD_MOVIE_RELEASE   0x9044
+#define CMD_GET_MOVIE_HANDLES 0x9045
+#define CMD_MOVIE_RESET     0x9046
 
 #define CMD_GET_OBJECT      0x9025
 #define CMD_GET_THUMBNAIL   0x9026
@@ -130,6 +142,10 @@
 #define DATA_FUNC_BASIC     0x0000
 #define DATA_FUNC_EXTENDED  0x8001
 
+#define DATA_CAPTURE_NORMAL 0x0001
+#define DATA_CAPTURE_CS     0x8001
+#define DATA_CAPTURE_PREREC 0x8002
+
 #define DATA_IS0_AUTO       0xFFFF
 #define DATA_IS0_100        0x0064
 #define DATA_IS0_200        0x00C8
@@ -137,6 +153,7 @@
 #define DATA_IS0_800        0x0320
 #define DATA_IS0_1600       0x0640
 
+#define DATA_MOVIE_MODE_STD 0x0000
 #define DATA_MOVIE_MODE_HD  0x0001
 #define DATA_MOVIE_MODE_HS  0x0002
 
@@ -151,20 +168,33 @@
 #define DATA_APERTURE_F6_7  0x0009
 #define DATA_APERTURE_F7_5  0x000A
 
+#define DATA_FOCUS_MANUAL   0x0001
 #define DATA_FOCUS_AF       0x0002
 #define DATA_FOCUS_MACRO    0x0003
-#define DATA_FOCUS_INFINITY 0x0004
-#define DATA_FOCUS_MANUAL   0x0005
+#define DATA_FOCUS_INFINITY 0x8001
 
 #define DATA_EXPOSURE_M     0x0001
 #define DATA_EXPOSURE_AUTO  0x0002
 #define DATA_EXPOSURE_A     0x0003
 #define DATA_EXPOSURE_S     0x0004
 
+#define DATA_ZOOM_OUT       0x0000
+#define DATA_ZOOM_IN        0x0001
+
+#define DATA_FOCUS_OUT      0x0000
+#define DATA_FOCUS_IN       0x0001
+
 #define TYPE_CMD            0x0001
 #define TYPE_DATA           0x0002
 #define TYPE_RESPONSE       0x0003
 #define TYPE_EVENT          0x0004
+
+#define EVT_DEVICE_INFO_CHANGED 0x4008
+#define EVT_ZOOM_CHANGED    0xC011
+#define EVT_FOCUS_CHANGED   0xC012
+
+#define EVT_FOCUS_OK        0xC014
+#define EVT_UNKNOWN_CHANGED 0xC015
 
 struct _WORD_DATA_SET {
     DWORD noItems;
@@ -172,6 +202,11 @@ struct _WORD_DATA_SET {
 };
 typedef struct _WORD_DATA_SET WORD_DATA_SET;
 
+struct _DWORD_DATA_SET {
+    DWORD noItems;
+    DWORD  data[];
+};
+typedef struct _DWORD_DATA_SET DWORD_DATA_SET;
 
 // GCC pack pragmas.
 #define PACK( __Declaration__ ) __Declaration__ __attribute__((__packed__))
@@ -296,9 +331,14 @@ void usbCmdGen(short int cmd, short int postCmdReads, int nCmdParameters, char c
 void usbTx(WORD cmd, WORD cmdType, int nCmdParameterBytes, DWORD cmdParameter1, DWORD cmdParameter2);
 int usbRx();
 int usbRxToFile(char *fileName);
+int usbRxEvent(); 
+void usbGetStatus();
+int usbInit();
 
 void printStringDataSet(char *pDescrition, STRING_DATA_SET *pDataSet);
-void printWordDataSet(char *pDescrition, WORD_DATA_SET *pDataSet); 
+void printWordDataSet(char *pDescrition, WORD_DATA_SET *pDataSet);
+void printDwordDataSet(char *pDescrition, DWORD_DATA_SET *pDataSet);
+
 void setDeviceInfo(char *pData);
 void printDeviceInfo();
 
@@ -311,6 +351,7 @@ void printObjectInfo();
 
 WORD getStringDataSet(STRING_DATA_SET **dst, char *src);
 DWORD getWordDataSet(WORD_DATA_SET **dst, char *src);
+DWORD getDwordDataSet(DWORD_DATA_SET **dst, char *src);
 
 void start_config(char enableStillImage, char enablePreRecord);
 void stop_config();
@@ -321,6 +362,10 @@ extern char img[IMG_BUF_SIZE];
 extern PTP_DEVICE_INFO deviceInfo;
 extern PTP_DEVICE_PROPERTY deviceProperty;
 extern PTP_OBJECT_INFO objectInfo;
+extern DWORD_DATA_SET *objectHandles;
+extern DWORD zoomSetting;
+extern DWORD focusSetting;
+extern DWORD USB_CMD_ID;
 
 #endif	/* LIBEXF1_H */
 
