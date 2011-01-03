@@ -184,12 +184,18 @@
 #define DATA_FOCUS_OUT      0x0000
 #define DATA_FOCUS_IN       0x0001
 
+#define DATA_MONITOR_LCD    0x0001
+#define DATA_MONITOR_PC     0x0002
+
 #define TYPE_CMD            0x0001
 #define TYPE_DATA           0x0002
 #define TYPE_RESPONSE       0x0003
 #define TYPE_EVENT          0x0004
 
 #define EVT_DEVICE_INFO_CHANGED 0x4008
+
+#define EVT_MONITOR_CHANGED 0xC001
+#define EVT_SOMETHING_CHANGED 0xC006
 #define EVT_ZOOM_CHANGED    0xC011
 #define EVT_FOCUS_CHANGED   0xC012
 
@@ -238,7 +244,7 @@ struct _PTP_CONTAINER {
             DWORD param1;
             DWORD param2;
         } dword_params;
-        unsigned char data[BUF_SIZE-12];
+        char data[BUF_SIZE-12];
     } payload;
 };
 typedef struct _PTP_CONTAINER PTP_CONTAINER;
@@ -331,6 +337,7 @@ void usbCmdGen(short int cmd, short int postCmdReads, int nCmdParameters, char c
 void usbTx(WORD cmd, WORD cmdType, int nCmdParameterBytes, DWORD cmdParameter1, DWORD cmdParameter2);
 int usbRx();
 int usbRxToFile(char *fileName);
+int usbRxToMem(char *jpgImage, int *jpgSize);
 int usbRxEvent(); 
 void usbGetStatus();
 int usbInit();
@@ -353,8 +360,8 @@ WORD getStringDataSet(STRING_DATA_SET **dst, char *src);
 DWORD getWordDataSet(WORD_DATA_SET **dst, char *src);
 DWORD getDwordDataSet(DWORD_DATA_SET **dst, char *src);
 
-void start_config(char enableStillImage, char enablePreRecord);
-void stop_config();
+void startConfig(char enableStillImage, char enablePreRecord);
+void stopConfig();
 
 extern usb_dev_handle *dev;
 extern char tmp[BUF_SIZE];

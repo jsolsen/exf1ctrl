@@ -12,7 +12,7 @@
 
 int main(int argc, char** argv)
 {
-   char input[64], com, name[32], tname[32];
+   char input[64], com, name[32], tname[32], jpgImage[3*IMG_BUF_SIZE];
    int arg, nargs, addr, val, i;
  
    printf(" \n");
@@ -92,7 +92,7 @@ int main(int argc, char** argv)
    printf("> Initializing camera... \n");
    fflush(stdout);
 		   
-   if (!init_camera())
+   if (!initCamera())
      return 0; 
    
    while (1)
@@ -108,34 +108,34 @@ int main(int argc, char** argv)
             printf("> Configuring aperture... \n");
             switch (arg) {
                case 1:
-                 setup_aperture(DATA_APERTURE_F2_7);
+                 setupAperture(DATA_APERTURE_F2_7);
                  break;
                case 2:
-                 setup_aperture(DATA_APERTURE_F3_0);
+                 setupAperture(DATA_APERTURE_F3_0);
                  break;
                case 3:
-                 setup_aperture(DATA_APERTURE_F3_3);
+                 setupAperture(DATA_APERTURE_F3_3);
                  break;
                case 4:
-                 setup_aperture(DATA_APERTURE_F3_8);
+                 setupAperture(DATA_APERTURE_F3_8);
                  break;
                case 5:
-                 setup_aperture(DATA_APERTURE_F4_2);
+                 setupAperture(DATA_APERTURE_F4_2);
                  break;
                case 6:
-                 setup_aperture(DATA_APERTURE_F4_7);
+                 setupAperture(DATA_APERTURE_F4_7);
                  break;
                case 7:
-                 setup_aperture(DATA_APERTURE_F5_3);
+                 setupAperture(DATA_APERTURE_F5_3);
                  break;
                case 8:
-                 setup_aperture(DATA_APERTURE_F6_0);
+                 setupAperture(DATA_APERTURE_F6_0);
                  break;
                case 9:
-                 setup_aperture(DATA_APERTURE_F6_7);
+                 setupAperture(DATA_APERTURE_F6_7);
                  break;
                case 10:
-                 setup_aperture(DATA_APERTURE_F7_5);
+                 setupAperture(DATA_APERTURE_F7_5);
                  break;
                default:
                  printf("> Unknown aperture setting. \n");
@@ -147,31 +147,31 @@ int main(int argc, char** argv)
             printf("> Configuring shutter mode / movie mode... \n");
             switch (arg) {
                 case 1:
-                    setup_shutter(SHUTTER_NORMAL, FALSE);
+                    setupShutter(SHUTTER_NORMAL, FALSE);
                     break;
                 case 2:
-                    setup_shutter(SHUTTER_CONTINOUS, FALSE);
+                    setupShutter(SHUTTER_CONTINOUS, FALSE);
                     break;
                 case 3:
-                    setup_shutter(SHUTTER_NORMAL, TRUE);
+                    setupShutter(SHUTTER_NORMAL, TRUE);
                     break;
                 case 4:
-                    setup_movie(MOVIE_STD, FALSE);
+                    setupMovie(MOVIE_STD, FALSE);
                     break;
                 case 5:
-                    setup_movie(MOVIE_STD, TRUE);
+                    setupMovie(MOVIE_STD, TRUE);
                     break;
                 case 6:
-                    setup_movie(MOVIE_HD, FALSE);
+                    setupMovie(MOVIE_HD, FALSE);
                     break; 
                 case 7:
-                    setup_movie(MOVIE_HD, TRUE);
+                    setupMovie(MOVIE_HD, TRUE);
                     break; 
                 case 8:
-                    setup_movie(MOVIE_HS, FALSE);
+                    setupMovie(MOVIE_HS, FALSE);
                     break; 
                 case 9:
-                    setup_movie(MOVIE_HS, TRUE);
+                    setupMovie(MOVIE_HS, TRUE);
                     break;
                 default:
                     printf("> This mode is yet to be supported. \n");
@@ -183,16 +183,16 @@ int main(int argc, char** argv)
             printf("> Configuring exposure... \n");
             switch (arg) {
                case 1:
-                 setup_exposure(DATA_EXPOSURE_M);
+                 setupExposure(DATA_EXPOSURE_M);
                  break;
                case 2:
-                 setup_exposure(DATA_EXPOSURE_AUTO);
+                 setupExposure(DATA_EXPOSURE_AUTO);
                  break;
                case 3:
-                 setup_exposure(DATA_EXPOSURE_A);
+                 setupExposure(DATA_EXPOSURE_A);
                  break;
                case 4:
-                 setup_exposure(DATA_EXPOSURE_S);
+                 setupExposure(DATA_EXPOSURE_S);
                  break;
                default:
                  printf("> Unknown focus setting. \n");
@@ -204,25 +204,43 @@ int main(int argc, char** argv)
             printf("> Configuring focus... \n");
             switch (arg) {
                case 1:
-                 setup_focus(DATA_FOCUS_AF);
+                 setupFocus(DATA_FOCUS_AF);
                  break;
                case 2:
-                 setup_focus(DATA_FOCUS_MACRO);
+                 setupFocus(DATA_FOCUS_MACRO);
                  break;
                case 3:
-                 setup_focus(DATA_FOCUS_INFINITY);
+                 setupFocus(DATA_FOCUS_INFINITY);
                  break;
                case 4:
-                 setup_focus(DATA_FOCUS_MANUAL);
+                 setupFocus(DATA_FOCUS_MANUAL);
                  break;
                default:
                  printf("> Unknown exposure setting. \n");
             }
             break;
 
+         case 'g':
+             nargs = sscanf(input, "%c %d", &com, &arg);
+             printf("> Configuring monitor... \n");
+             setupMonitor(TRUE);
+             
+             if (nargs != 2) {
+                 arg = 1; 
+             }
+             
+             for (i=0; i<arg; i++) {
+                 printf("> Grapping frame... \n");
+                 grapPcMonitorFrame(jpgImage);
+             }
+
+             printf("> Configuring monitor... \n");
+             setupMonitor(FALSE);
+             break;
+
          case 'h':
             printf("> Half press... \n");
-            half_shutter(); 
+            halfShutter();
             break; 
             
          case 'i':
@@ -230,22 +248,22 @@ int main(int argc, char** argv)
             printf("> Configuring ISO... \n");
             switch (arg) {
                case 1:
-                 setup_iso(DATA_IS0_AUTO);
+                 setupIso(DATA_IS0_AUTO);
                  break;
                case 2:
-                 setup_iso(DATA_IS0_100);
+                 setupIso(DATA_IS0_100);
                  break;
                case 3:
-                 setup_iso(DATA_IS0_200);
+                 setupIso(DATA_IS0_200);
                  break;                 
                case 4:
-                 setup_iso(DATA_IS0_400);
+                 setupIso(DATA_IS0_400);
                  break;
                case 5:
-                 setup_iso(DATA_IS0_800);
+                 setupIso(DATA_IS0_800);
                  break;
                case 6:
-                 setup_iso(DATA_IS0_1600);
+                 setupIso(DATA_IS0_1600);
                  break;
                default:
                  printf("> Unknown ISO setting. \n");
@@ -264,9 +282,9 @@ int main(int argc, char** argv)
             break; 
             
          case 'q':
-            exit_camera();
+            exitCamera();
             printf("> Bye! \n");
-            terminate_camera();
+            terminateCamera();
             return 0;    
             
          case 's':

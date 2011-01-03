@@ -56,11 +56,11 @@ LDLIBSOPTIONS=-lusb
 
 # Build Targets
 .build-conf: ${BUILD_SUBPROJECTS}
-	"${MAKE}"  -f nbproject/Makefile-Release.mk ../../../bin/ExF1Ctrl.exe
+	"${MAKE}"  -f nbproject/Makefile-Release.mk ../../../bin/exf1Ctrl.exe
 
-../../../bin/ExF1Ctrl.exe: ${OBJECTFILES}
+../../../bin/exf1Ctrl.exe: ${OBJECTFILES}
 	${MKDIR} -p ../../../bin
-	${LINK.c} -o ../../../bin/ExF1Ctrl ${OBJECTFILES} ${LDLIBSOPTIONS} 
+	${LINK.c} -o ../../../bin/exf1Ctrl ${OBJECTFILES} ${LDLIBSOPTIONS} 
 
 ${OBJECTDIR}/_ext/1386528437/exf1api.o: ../../../src/exf1api.c 
 	${MKDIR} -p ${OBJECTDIR}/_ext/1386528437
@@ -83,7 +83,7 @@ ${OBJECTDIR}/_ext/1386528437/libexf1.o: ../../../src/libexf1.c
 # Clean Targets
 .clean-conf: ${CLEAN_SUBPROJECTS}
 	${RM} -r build/Release
-	${RM} ../../../bin/ExF1Ctrl.exe
+	${RM} ../../../bin/exf1Ctrl.exe
 
 # Subprojects
 .clean-subprojects:

@@ -11,8 +11,8 @@ CND_CONF=Release
 CND_DISTDIR=dist
 NBTMPDIR=build/${CND_CONF}/${CND_PLATFORM}/tmp-packaging
 TMPDIRNAME=tmp-packaging
-OUTPUT_PATH=../../../bin/ExF1Ctrl
-OUTPUT_BASENAME=ExF1Ctrl
+OUTPUT_PATH=../../../bin/exf1Ctrl
+OUTPUT_BASENAME=exf1Ctrl
 PACKAGE_TOP_DIR=exf1ctrl/
 
 # Functions

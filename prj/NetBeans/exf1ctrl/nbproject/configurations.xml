@@ -44,7 +44,7 @@
       </toolsSet>
       <compileType>
         <linkerTool>
-          <output>../../../bin/ExF1Ctrl</output>
+          <output>../../../bin/exf1Ctrl</output>
           <linkerLibItems>
             <linkerLibLibItem>usb</linkerLibLibItem>
           </linkerLibItems>
@@ -71,7 +71,7 @@
           <developmentMode>5</developmentMode>
         </asmTool>
         <linkerTool>
-          <output>../../../bin/ExF1Ctrl</output>
+          <output>../../../bin/exf1Ctrl</output>
           <linkerLibItems>
             <linkerLibLibItem>usb</linkerLibLibItem>
           </linkerLibItems>

@@ -22,29 +22,29 @@ typedef enum {
     MOVIE_HS,
 } MOVIE_MODES;
 
-void start_config(char enableStillImage, char enablePreRecord);
-void stop_config();
+void startConfig(char enableStillImage, char enablePreRecord);
+void stopConfig();
 
-int init_camera(void);
-void half_shutter(void);
+int initCamera(void);
+void halfShutter(void);
 void shutter(char *fileName, char *thumbNail, int delay);
-void terminate_camera(void);
+void terminateCamera(void);
 
-void setup_movie(MOVIE_MODES movieMode, char enablePreRecord);
-void setup_shutter(SHUTTER_MODES shutterMode, char enablePreRecord);
+void setupMovie(MOVIE_MODES movieMode, char enablePreRecord);
+void setupShutter(SHUTTER_MODES shutterMode, char enablePreRecord);
 
 void movie(char filename[], int delay);
-void setup_pc_monitor(void);
-void setup_iso(WORD iso);
-void setup_aperture(WORD aperture);
-void setup_exposure(WORD exposure);
-void setup_focus(WORD focus); 
+void setupMonitor(char isPc);
+void setupIso(WORD iso);
+void setupAperture(WORD aperture);
+void setupExposure(WORD exposure);
+void setupFocus(WORD focus);
 
 void zoom(char zoomIn, char continousZoom);
 void focus(char focusIn, char continousFocus);
 
-int grap_pc_monitor_frame(char *jpg_img);
-void exit_camera(void);
+int grapPcMonitorFrame(char *jpgImage);
+void exitCamera(void);
 
 extern char halfShutterPressed;
 extern char stillImageEnabled;

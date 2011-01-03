@@ -5,7 +5,7 @@ char stillImageEnabled = TRUE;
 char preRecordEnabled  = FALSE;
 char continousShutterEnabled = FALSE; 
 
-int init_camera(void)
+int initCamera(void)
 {
     if (usbInit() == 0)
         exit(0);
@@ -29,8 +29,8 @@ int init_camera(void)
     usbRx(); 
     */
 
-    start_config(TRUE, FALSE);
-
+    startConfig(TRUE, FALSE);
+    
     return 1;
 }
 
@@ -80,7 +80,7 @@ void focus(char focusIn, char continousFocus) {
     }
 }
 
-void half_shutter(void)
+void halfShutter(void)
 {
     if (halfShutterPressed == FALSE) {
         exf1Cmd(CMD_HALF_PRESS);
@@ -109,7 +109,7 @@ void shutter(char *fileName, char *thumbNail, int delay)
         exf1Cmd(CMD_SHUTTER);
 
     exf1Cmd(CMD_GET_STILL_HANDLES);
-    
+
     if (continousShutterEnabled) {
         for (i=0; i<objectHandles->noItems; i++) {
 
@@ -133,13 +133,12 @@ void shutter(char *fileName, char *thumbNail, int delay)
         exf1Cmd(CMD_GET_OBJECT,    TO_FILE, objectHandles->data[0], fileName);
         exf1Cmd(CMD_GET_THUMBNAIL, TO_FILE, objectHandles->data[0], thumbNail);
     }
-
     exf1Cmd(CMD_STILL_RESET);
 }
 
-void setup_shutter(SHUTTER_MODES shutterMode, char enablePreRecord)
+void setupShutter(SHUTTER_MODES shutterMode, char enablePreRecord)
 {
-    stop_config();
+    stopConfig();
     switch(shutterMode) {
         case SHUTTER_NORMAL:
             exf1Cmd(CMD_WRITE, ADDR_CAPTURE_MODE, DATA_CAPTURE_NORMAL);
@@ -154,19 +153,19 @@ void setup_shutter(SHUTTER_MODES shutterMode, char enablePreRecord)
             continousShutterEnabled = TRUE;
             break;
     }
-    start_config(FALSE, enablePreRecord);
+    startConfig(FALSE, enablePreRecord);
 
     // Verify that ADDR_HS_SETTING is set to something valid?
     //usbCmdGen(0x1015, TWO_READS, 4, (char[]){0x0D, 0xD0, 0x00, 0x00});
 
-    stop_config();
+    stopConfig();
     exf1Cmd(CMD_WRITE, ADDR_FOCUS, DATA_FOCUS_AF);
-    start_config(FALSE, enablePreRecord);
+    startConfig(FALSE, enablePreRecord);
 }
 
-void setup_movie(MOVIE_MODES movieMode, char enablePreRecord)
+void setupMovie(MOVIE_MODES movieMode, char enablePreRecord)
 {
-    stop_config();
+    stopConfig();
     switch (movieMode) {
         case MOVIE_STD:
             exf1Cmd(CMD_WRITE, ADDR_MOVIE_MODE, DATA_MOVIE_MODE_STD);
@@ -178,45 +177,45 @@ void setup_movie(MOVIE_MODES movieMode, char enablePreRecord)
             exf1Cmd(CMD_WRITE, ADDR_MOVIE_MODE, DATA_MOVIE_MODE_HS);
             break;
     }
-    start_config(FALSE, enablePreRecord);
+    startConfig(FALSE, enablePreRecord);
 
     // Verify that ADDR_HS_SETTING is set to something valid?
     //usbCmdGen(0x1015, TWO_READS, 4, (char[]){0x0D, 0xD0, 0x00, 0x00});
 
-    stop_config();
+    stopConfig();
     exf1Cmd(CMD_WRITE, ADDR_FOCUS, DATA_FOCUS_AF);
-    start_config(FALSE, enablePreRecord);
+    startConfig(FALSE, enablePreRecord);
 }
 
-void setup_iso(WORD iso)
+void setupIso(WORD iso)
 {
-    stop_config();
+    stopConfig();
     exf1Cmd(CMD_WRITE, ADDR_ISO, iso);
-    start_config(stillImageEnabled, preRecordEnabled);
+    startConfig(stillImageEnabled, preRecordEnabled);
 }
 
-void setup_aperture(WORD aperture)
+void setupAperture(WORD aperture)
 {
-    stop_config();
+    stopConfig();
     exf1Cmd(CMD_WRITE, ADDR_APERTURE, aperture);
-    start_config(stillImageEnabled, preRecordEnabled);
+    startConfig(stillImageEnabled, preRecordEnabled);
 }
 
-void setup_exposure(WORD exposure)
+void setupExposure(WORD exposure)
 {
-    stop_config();
+    stopConfig();
     exf1Cmd(CMD_WRITE, ADDR_EXPOSURE, exposure);
-    start_config(stillImageEnabled, preRecordEnabled);
+    startConfig(stillImageEnabled, preRecordEnabled);
 }
 
-void setup_focus(WORD focus)
+void setupFocus(WORD focus)
 {
-    stop_config();
+    stopConfig();
     exf1Cmd(CMD_WRITE, ADDR_FOCUS, focus);
-    start_config(stillImageEnabled, preRecordEnabled);
+    startConfig(stillImageEnabled, preRecordEnabled);
 }
 
-void stop_config()
+void stopConfig()
 {
     if (stillImageEnabled)
         exf1Cmd(CMD_STILL_STOP);
@@ -224,7 +223,7 @@ void stop_config()
         exf1Cmd(CMD_MOVIE_STOP);
 }
 
-void start_config(char enableStillImage, char enablePreRecord)
+void startConfig(char enableStillImage, char enablePreRecord)
 {
     if (enableStillImage)
         exf1Cmd(CMD_STILL_START);
@@ -237,8 +236,6 @@ void start_config(char enableStillImage, char enablePreRecord)
 
 void movie(char *fileName, int delay)
 {
-    char bytes[2];
-    
     exf1Cmd(CMD_MOVIE_PRESS);
 
     if (delay >= 0)
@@ -253,111 +250,37 @@ void movie(char *fileName, int delay)
     exf1Cmd(CMD_MOVIE_RESET, preRecordEnabled);
 }
 
-void setup_pc_monitor(void)
-{
-  stop_config();
-  usbCmdGen(0x1016, ONE_READ, 6, (char[]){0x01, 0xD0, 0x00, 0x00, 0x02, 0x00});
-  start_config(stillImageEnabled, preRecordEnabled);
+void setupMonitor(char isPc) {
+    stopConfig();
+    if (isPc) 
+        exf1Cmd(CMD_WRITE, ADDR_MONITOR, DATA_MONITOR_PC);
+    else
+        exf1Cmd(CMD_WRITE, ADDR_MONITOR, DATA_MONITOR_LCD);
+    startConfig(stillImageEnabled, preRecordEnabled);
+    Sleep(2000);
 }
 
-void setup_lcd_monitor(void)
+void exitCamera(void)
 {
-  stop_config();
-  usbCmdGen(0x1016, ONE_READ, 6, (char[]){0x01, 0xD0, 0x00, 0x00, 0x01, 0x00});
-  start_config(stillImageEnabled, preRecordEnabled);
-}
-
-void exit_camera(void)
-{
-    /*
-    usb_bulk_read(dev, EP_IN, tmp, BUF_SIZE, TIME_OUT);
-
-    if (usb_interrupt_read(dev, EP_INT, tmp, 16, TIME_OUT) < 0)
-        printf("error: interrupt read 1 failed\n");
-
-    if (usb_interrupt_read(dev, EP_INT, tmp, 16, TIME_OUT) < 0)
-        printf("error: interrupt read 1 failed\n");
-
-    usbCmdGen(0x9002, NO_READS, 0, NULL);
-
-    if (usb_interrupt_read(dev, EP_INT, tmp, 16, TIME_OUT) < 0)
-        printf("error: interrupt read 1 failed\n");
-
-    if (usb_interrupt_read(dev, EP_INT, tmp, 16, TIME_OUT) < 0)
-        printf("error: interrupt read 1 failed\n");
-
-    usb_bulk_read(dev, EP_IN, tmp, BUF_SIZE, TIME_OUT);
-
-    usbCmdGen(0x1016, ONE_READ, 6, (char[]){0x01, 0xD0, 0x00, 0x00, 0x01, 0x00});
-    usbCmdGen(0x9001, ONE_READ, 4, (char[]){0x00, 0x00, 0x00, 0x00});
-    */
-
-    stop_config();
+    stopConfig();
     exf1Cmd(CMD_WRITE, ADDR_FUNCTIONALITY, DATA_FUNC_BASIC);
     exf1Cmd(CMD_CLOSE_SESSION);
-
+    while (usbRxEvent()>0);
     printf("Exit done\n");
 }
 
-int grap_pc_monitor_frame(char *jpg_img)
+int grapPcMonitorFrame(char *jpgImage)
 {
-   int bytesRead = -1, bytesCopied = 0, frameNo = 0, jpgSize = -1;
-
-   // Not needed?
-   do {
-        bytesRead = usb_bulk_read(dev, EP_IN, img, IMG_BUF_SIZE, TIME_OUT);
-        //printf("1. Bytes read=%d\n", bytesRead);
-   } while (bytesRead < 0);
-
-    do {
-       frameNo = 0;
-       do {
-            bytesRead = usb_interrupt_read(dev, EP_INT, tmp, 16, TIME_OUT);
-            //printf("2. Bytes read=%d\n", bytesRead);
-
-            if (bytesRead == 8) {
-               frameNo = GET_DWORD(tmp);
-               //printf("Frame no.= %d\n", frameNo);
-            }
-        } while ((frameNo-1)%3 != 0);
-
-       printf("Get frame: %d!\n", frameNo);
-
-       usbCmdGen(0x9025, NO_READS, 4, (char[]){0x02, 0x00, 0x00, 0x10});
-       bytesRead = usb_bulk_read(dev, EP_IN, img, 512, TIME_OUT);
-       //printf("3. Bytes read=%d\n", bytesRead);
-
-   } while (bytesRead < 0);
-
-   memcpy(jpg_img, img+12, bytesRead-12);
-   bytesCopied = bytesRead;
-
-   jpgSize = GET_DWORD(img);
-   jpgSize -= 12;
-
-   //printf("JPG size = %d ", jpgSize);
-
-   if (jpgSize > 0) {
-
-       int bytesRemaining = jpgSize - bytesCopied + 12;
-
-       do {
-           bytesRead = usb_bulk_read(dev, EP_IN, jpg_img + bytesCopied - 12, 512 * ((int)(bytesRemaining/512)+1), TIME_OUT);
-           //printf("4. Bytes read=%d\n", bytesRead);
-       } while (bytesRead < 0);
-       bytesCopied += bytesRead;
-       bytesRemaining -= bytesRead;
-       //printf("bytesCopied=%d bytesRemaining=%d\n", bytesCopied, bytesRemaining);
-
-   } else
-       printf("Error: Negative JPG size!\n");
-
-   //printf("Done!\n");
-   return jpgSize;
+    int jpgSize = -1;
+    //exf1Cmd(CMD_GET_STILL_HANDLES);
+    //exf1Cmd(CMD_GET_OBJECT_INFO, 0x10000002);
+    exf1Cmd(CMD_GET_OBJECT, TO_MEM, 0x10000002, jpgImage, &jpgSize);
+    return jpgSize;
 }
 
-void terminate_camera(void)
+void terminateCamera(void)
 {
   usb_release_interface(dev, 0);
+  usb_reset(dev);
   usb_close(dev);
 }
