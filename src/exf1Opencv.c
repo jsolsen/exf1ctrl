@@ -1,18 +1,4 @@
-#ifdef _CH_
-#pragma package <opencv>
-#endif
-
-#define CV_NO_BACKWARD_COMPATIBILITY
-
-#include <cv.h>
-#include "exf1api.h"
-#include <highgui.h>
-#include <stdio.h>
-#include <ctype.h>
-#include <jpeglib.h>
-#include <cderror.h>
-
-#define JMESSAGE(code,string) string ,
+#include "exf1Opencv.h"
 
 static const char * const cdjpeg_message_table[] = {
   NULL
@@ -22,6 +8,8 @@ void getCameraFrame(IplImage* frame)
 {
     char jpgImage[3*IMG_BUF_SIZE];
     int jpgSize;
+	int offset = 0;
+    JSAMPROW rowptr[1];
     JDIMENSION num_scanlines;
 
     jpgSize = grapPcMonitorFrame(jpgImage);
@@ -38,8 +26,8 @@ void getCameraFrame(IplImage* frame)
         jpeg_create_decompress(&cinfo);
 
         jerr.addon_message_table = cdjpeg_message_table;
-        jerr.first_addon_message = JMSG_FIRSTADDONCODE;
-        jerr.last_addon_message = JMSG_LASTADDONCODE;
+        //jerr.first_addon_message = JMSG_FIRSTADDONCODE;
+        //jerr.last_addon_message = JMSG_LASTADDONCODE;
 
         // Now safe to enable signal catcher.
         #ifdef NEED_SIGNAL_CATCHER
@@ -51,8 +39,6 @@ void getCameraFrame(IplImage* frame)
 
         if (jpeg_read_header(&cinfo, TRUE) == JPEG_HEADER_OK) {
             jpeg_start_decompress(&cinfo);
-            int offset = 0;
-            JSAMPROW rowptr[1];
 
             while (cinfo.output_scanline < cinfo.output_height) {
                 rowptr[0] = (JSAMPROW)&(frame->imageData[offset * 640 * 3]);
@@ -71,7 +57,9 @@ void getCameraFrame(IplImage* frame)
 
 int main( int argc, char** argv )
 {
-    IplImage *frame = cvCreateImage(cvSize(640,480), 8, 3);
+    IplImage *frame; 
+	
+	frame = cvCreateImage(cvSize(640,480), 8, 3);
 
     if (!initCamera())
        return 0;

@@ -199,7 +199,7 @@ void usbTx(WORD cmd, WORD cmdType, int nCmdParameterBytes, DWORD cmdParameter1, 
 
     while (usbRxEvent()>0);
 
-    if (usb_bulk_write(dev, EP_OUT, (char *) &tx, packetSize, TIME_OUT) != packetSize)
+    if (usb_bulk_write(dev, EP_OUT, (char *) &tx, packetSize, 100) != packetSize)
         printf("Error: Bulk write failed for this command: %02X!\n", 0xFFFF & cmd);
 
     USB_CMD_ID++;
@@ -360,7 +360,7 @@ int usbRxToMem(char *jpgImage, int *jpgSize) {
                 jpgImage -= 12; // Don't count the PTP header...
                 for (bytesRemaining = rx->length - bytesRead; bytesRemaining > 0; bytesRemaining -= bytesRead) {
                     jpgImage += bytesRead;
-                    do bytesRead = usb_bulk_read(dev, EP_IN, jpgImage, 512 * ((int)(bytesRemaining/512)+1), 1000);
+                    do bytesRead = usb_bulk_read(dev, EP_IN, jpgImage, 512 * ((int)(bytesRemaining/512)+1), 100);
                     while (bytesRead == -116);
                 }
                 break;
@@ -390,7 +390,7 @@ int usbRxEvent(){
 
     //int bytesRead = usb_interrupt_read(dev, EP_INT, tmp, 24, 5);
 
-    int bytesRead = -1, i;
+    int bytesRead = -1;
 
     // Clear tmp buffer.
     memset(tmp, 0, 16);
@@ -552,7 +552,7 @@ void printStringDataSet(char *pDescrition, STRING_DATA_SET *pDataSet) {
 
 void printWordDataSet(char *pDescrition, WORD_DATA_SET *pDataSet) {
 
-    int i;
+    DWORD i;
     printf("%s", pDescrition);
     for (i=0; i<pDataSet->noItems; i++)
         printf("0x%04X, ", pDataSet->data[i]);
@@ -562,7 +562,7 @@ void printWordDataSet(char *pDescrition, WORD_DATA_SET *pDataSet) {
 
 void printDwordDataSet(char *pDescrition, DWORD_DATA_SET *pDataSet) {
 
-    int i;
+    DWORD i;
     printf("%s", pDescrition);
     for (i=0; i<pDataSet->noItems; i++)
         printf("0x%08X, ", pDataSet->data[i]);

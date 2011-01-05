@@ -94,7 +94,7 @@ void halfShutter(void)
 
 void shutter(char *fileName, char *thumbNail, int delay)
 {
-    int i;
+    DWORD i;
     //char newFileName[255], newThumbNail[255];
 
     if (continousShutterEnabled) {

@@ -215,10 +215,14 @@ struct _DWORD_DATA_SET {
 typedef struct _DWORD_DATA_SET DWORD_DATA_SET;
 
 // GCC pack pragmas.
-#define PACK( __Declaration__ ) __Declaration__ __attribute__((__packed__))
+#ifdef __GNUC__
+    #define PACK( __Declaration__ ) __Declaration__ __attribute__((__packed__))
+#endif
 
 // VC++ pack pragmas,
-//#define PACK( __Declaration__ ) __pragma( pack(push, 1) ) __Declaration__ __pragma( pack(pop) )
+#ifdef _MSC_VER
+    #define PACK( __Declaration__ ) __pragma( pack(push, 1) ) __Declaration__ __pragma( pack(pop) )
+#endif
 
 PACK(
 struct _STRING_DATA_SET {
