@@ -152,11 +152,11 @@ void exf1Cmd(WORD cmd, ...)
                     break;
                 case TO_MEM:
                     pInt = (int *) va_arg(ap, int); //
-                    do {
-                        usbTx(cmd, TYPE_CMD, sizeof(DWORD), dwordVal, 0);
-                        usbRxToMem(pString, pInt);
+					do {
+						usbTx(cmd, TYPE_CMD, sizeof(DWORD), dwordVal, 0);
+						usbRxToMem(pString, pInt);
                     } while (rx->code == 0x2019);
-                    usbRx();
+					usbRx();
                     break;
             }
             break;
@@ -197,8 +197,9 @@ void usbTx(WORD cmd, WORD cmdType, int nCmdParameterBytes, DWORD cmdParameter1, 
     printf("\n");
     */
 
-    while (usbRxEvent()>0);
-
+    //while (usbRxEvent()>0);
+	usbRxEvent();
+	//printf("Grabbing frame: %d\n", frameNo);
     if (usb_bulk_write(dev, EP_OUT, (char *) &tx, packetSize, 100) != packetSize)
         printf("Error: Bulk write failed for this command: %02X!\n", 0xFFFF & cmd);
 
@@ -213,7 +214,8 @@ int usbRx() {
     memset(tmp, 0, 12);
 
     do {
-        while (usbRxEvent()>0);
+        //while (usbRxEvent()>0);
+		usbRxEvent();
         bytesRead = usb_bulk_read(dev, EP_IN, tmp, BUF_SIZE, 100);
         //printf("bytesRead (usbRx): %d\n", bytesRead);
     } while (bytesRead == -116);
@@ -296,7 +298,8 @@ int usbRxToFile(char *fileName) {
     memset(img, 0, 12); 
 
     do {
-        while (usbRxEvent() > 0);
+        //while (usbRxEvent() > 0);
+		usbRxEvent();
         bytesRead = usb_bulk_read(dev, EP_IN, img, IMG_BUF_SIZE, 100);
         //printf("bytesRead (usbRxToFile): %d\n", bytesRead);
     } while (bytesRead == -116);
@@ -344,8 +347,9 @@ int usbRxToMem(char *jpgImage, int *jpgSize) {
     memset(img, 0, 12);
 
     do {
-        while (usbRxEvent() > 0);
-        bytesRead = usb_bulk_read(dev, EP_IN, img, IMG_BUF_SIZE, 100);
+        //while (usbRxEvent() > 0);
+		usbRxEvent();
+        bytesRead = usb_bulk_read(dev, EP_IN, img, IMG_BUF_SIZE, 50);
         //printf("bytesRead (usbRxToMem): %d\n", bytesRead);
     } while (bytesRead == -116);
 
@@ -358,10 +362,16 @@ int usbRxToMem(char *jpgImage, int *jpgSize) {
                 *jpgSize = rx->length-12;
                 memcpy(jpgImage, rx->payload.data, bytesRead-12);
                 jpgImage -= 12; // Don't count the PTP header...
+
                 for (bytesRemaining = rx->length - bytesRead; bytesRemaining > 0; bytesRemaining -= bytesRead) {
                     jpgImage += bytesRead;
-                    do bytesRead = usb_bulk_read(dev, EP_IN, jpgImage, 512 * ((int)(bytesRemaining/512)+1), 100);
-                    while (bytesRead == -116);
+                    printf("jpgSize: %d\n",jpgSize); 
+					
+					/*do {
+						usbRxEvent();
+						bytesRead = usb_bulk_read(dev, EP_IN, jpgImage, 512 * ((int)(bytesRemaining/512)+1), 100);
+						//printf("bytesRead (usbRxToMem): %d\n", bytesRead);
+					} while (bytesRead == -116);*/
                 }
                 break;
             case TYPE_RESPONSE:
@@ -377,7 +387,7 @@ int usbRxToMem(char *jpgImage, int *jpgSize) {
                 break;
         }
     }
-    else {
+    else if (bytesRead < 0) {
         printf("Error: Bulk read failed (usbRxToMem)! %d %s\n", bytesRead, usb_strerror());
         memset(img,0,IMG_BUF_SIZE);
     }
@@ -396,33 +406,17 @@ int usbRxEvent(){
     memset(tmp, 0, 16);
     rx = (PTP_CONTAINER *) tmp;
 
+	bytesRead = usb_interrupt_read(dev, EP_INT, tmp, 24, 10);
+
+	/*
     // Attempt read.
-    bytesRead = usb_interrupt_read(dev, EP_INT, tmp, 16, 10);
-    //printf("bytesRead (usbRxEvent): %d \n", bytesRead);
-
-    if (rx->length > bytesRead && bytesRead > 0)
-        bytesRead += usb_interrupt_read(dev, EP_INT, tmp+bytesRead, 16, 10);
-/*
-    if (bytesRead == 16)
-        memcpy(interruptBuffer, tmp, bytesRead);
-    else if (bytesRead == 8) {
-        memcpy(interruptBuffer+16, tmp+16, bytesRead);
-        rx = (PTP_CONTAINER *) interruptBuffer;
-    }
-*/
-    //printf("bytesRead (usbRxEvent): %d \n", bytesRead);
-  /*
-    int i;
-    for (i=0; i<32; i++)
-        printf("%02X-", 0xFF & interruptBuffer[i]);
-    printf("\n");
-*/
-
-    /*int bytesRead = usb_interrupt_read(dev, EP_INT, tmp, 16, 5);
-    if (bytesRead > 0)
-        bytesRead += usb_interrupt_read(dev, EP_INT, tmp+bytesRead, 16, 5);*/
-//    rx = (PTP_CONTAINER *) tmp;
-
+    bytesRead = usb_bulk_read(dev, EP_INT, tmp, 16, 20);
+    if (rx->length > bytesRead && bytesRead > 0) {
+        bytesRead += usb_bulk_read(dev, EP_INT, tmp+bytesRead, 16, 20);
+		if (bytesRead != -116 && bytesRead < 0)
+			printf(" Error: interrupt read 2 failed (usbRxEvent): %s %d!\n", usb_strerror(), bytesRead);
+	}
+	*/
     if (bytesRead > 0) {
 
         /*printf("usbRxEvent: 0x%04X 0x%04X ", rx->code, rx->type);
@@ -431,9 +425,10 @@ int usbRxEvent(){
         printf("\n");*/
 
         if (rx->type == TYPE_EVENT) {
+			//printf("Got 0x%04x event...\n", rx->code); 
             switch (rx->code) {
                 case EVT_MONITOR_CHANGED:
-                    frameNo = rx->payload.dword_params.param2;
+					frameNo = rx->payload.dword_params.param2;
                     //printf("frameNo: %d\n", frameNo);
                     break; 
                 case EVT_FOCUS_CHANGED:
@@ -454,7 +449,7 @@ int usbRxEvent(){
         //    printf("Not an event message!\n");
     }
     else if (bytesRead != -116)
-        printf(" Error: interrupt read failed (usbRxEvent): %s!\n", usb_strerror());
+        printf(" Error: interrupt read failed (usbRxEvent): %s %d!\n", usb_strerror(), bytesRead);
 
     return bytesRead;
 }

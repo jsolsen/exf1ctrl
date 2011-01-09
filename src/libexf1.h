@@ -27,8 +27,8 @@
 #define EP_INT 0x83
 
 #define BUF_SIZE 512
-#define IMG_BUF_SIZE 65536
-#define TIME_OUT 3500
+#define IMG_BUF_SIZE		196608 //131072
+#define TIME_OUT			3500
 
 #define WORD                short unsigned int      // 16bits
 #define DWORD               unsigned int            // 32bits
@@ -377,6 +377,7 @@ extern DWORD_DATA_SET *objectHandles;
 extern DWORD zoomSetting;
 extern DWORD focusSetting;
 extern DWORD USB_CMD_ID;
+extern DWORD frameNo; 
 
 #endif	/* LIBEXF1_H */
 

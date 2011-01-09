@@ -10,6 +10,14 @@
 
 #include "libexf1.h"
 
+#define CV_NO_BACKWARD_COMPATIBILITY
+#include <cv.h>
+#include <ctype.h>
+#include <jpeglib.h>
+//#include <cderror.h>
+
+#define JMESSAGE(code,string) string ,
+
 typedef enum {
     SHUTTER_NORMAL,
     SHUTTER_CONTINOUS,
@@ -44,6 +52,7 @@ void zoom(char zoomIn, char continousZoom);
 void focus(char focusIn, char continousFocus);
 
 int grapPcMonitorFrame(char *jpgImage);
+void getCameraFrame(IplImage* frame); 
 void exitCamera(void);
 
 extern char halfShutterPressed;

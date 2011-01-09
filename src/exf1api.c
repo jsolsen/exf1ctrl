@@ -257,7 +257,7 @@ void setupMonitor(char isPc) {
     else
         exf1Cmd(CMD_WRITE, ADDR_MONITOR, DATA_MONITOR_LCD);
     startConfig(stillImageEnabled, preRecordEnabled);
-    Sleep(2000);
+    //Sleep(2000);
 }
 
 void exitCamera(void)
@@ -272,10 +272,67 @@ void exitCamera(void)
 int grapPcMonitorFrame(char *jpgImage)
 {
     int jpgSize = -1;
-    //exf1Cmd(CMD_GET_STILL_HANDLES);
-    //exf1Cmd(CMD_GET_OBJECT_INFO, 0x10000002);
-    exf1Cmd(CMD_GET_OBJECT, TO_MEM, 0x10000002, jpgImage, &jpgSize);
+	if (frameNo > 0) 
+		exf1Cmd(CMD_GET_OBJECT, TO_MEM, 0x10000002, jpgImage, &jpgSize);
+	else
+		usbRxEvent(); 
     return jpgSize;
+}
+
+static const char * const cdjpeg_message_table[] = {
+  NULL
+};
+
+void getCameraFrame(IplImage* frame)
+{
+    char jpgImage[3*IMG_BUF_SIZE];
+    int jpgSize;
+	int offset = 0;
+    JSAMPROW rowptr[1];
+    JDIMENSION num_scanlines;
+
+    jpgSize = grapPcMonitorFrame(jpgImage);
+	if (jpgSize > 3*IMG_BUF_SIZE) 
+		printf("jpgSize: %d maxSize is: %d \n", jpgSize, 3*IMG_BUF_SIZE);
+
+    if (jpgSize > 0) {
+
+        //cvInitImageHeader(frame, cvSize(640,480), IPL_DEPTH_8U, 3, IPL_ORIGIN_TL, 4);
+        //cvCreateData(frame);
+
+        struct jpeg_decompress_struct cinfo;
+        struct jpeg_error_mgr jerr;
+
+        cinfo.err = jpeg_std_error(&jerr);
+        jpeg_create_decompress(&cinfo);
+
+        jerr.addon_message_table = cdjpeg_message_table;
+        //jerr.first_addon_message = JMSG_FIRSTADDONCODE;
+        //jerr.last_addon_message = JMSG_LASTADDONCODE;
+
+        // Now safe to enable signal catcher.
+        #ifdef NEED_SIGNAL_CATCHER
+          //enable_signal_catcher((j_common_ptr) &cinfo);
+        #endif
+
+        jpeg_mem_src(&cinfo, (unsigned char*) jpgImage, (unsigned long) jpgSize);
+        //(void) jpeg_read_header(&cinfo, TRUE);
+
+        if (jpeg_read_header(&cinfo, TRUE) == JPEG_HEADER_OK) {
+            jpeg_start_decompress(&cinfo);
+
+            while (cinfo.output_scanline < cinfo.output_height) {
+                rowptr[0] = (JSAMPROW)&(frame->imageData[offset * 640 * 3]);
+                num_scanlines = jpeg_read_scanlines(&cinfo, rowptr,1);
+
+                offset+=1;
+            }
+            jpeg_finish_decompress(&cinfo);
+        }
+        jpeg_destroy_decompress(&cinfo);
+    }
+    else
+        printf("JPG size is negative!\n"); 
 }
 
 void terminateCamera(void)

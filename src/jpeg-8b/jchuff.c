@@ -304,7 +304,7 @@ dump_buffer_e (huff_entropy_ptr entropy)
 
 INLINE
 LOCAL(boolean)
-emit_bits_s (working_state * state, unsigned int code, int size)
+emit_bits_s(working_state * state, unsigned int code, int size)
 /* Emit some bits; return TRUE if successful, FALSE if must suspend */
 {
   /* This routine is heavily used, so it's worth coding tightly. */
