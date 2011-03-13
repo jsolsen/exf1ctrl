@@ -1,20 +1,35 @@
 #include "libexf1.h"
 
-usb_dev_handle *dev = NULL;
-char tmp[BUF_SIZE];
-char img[IMG_BUF_SIZE];
-char interruptBuffer[24]; 
-PTP_DEVICE_INFO deviceInfo;
-PTP_DEVICE_PROPERTY deviceProperty;
-PTP_OBJECT_INFO objectInfo;
-DWORD_DATA_SET *objectHandles;
-PTP_CONTAINER *rx; 
-DWORD zoomSetting;
-DWORD focusSetting;
-DWORD USB_CMD_ID = 0xFFFFFFFF;
-DWORD frameNo = 0;
 
-void exf1Cmd(WORD cmd, ...)
+libexf1::libexf1() {
+	dev = NULL;
+	USB_CMD_ID = 0xFFFFFFFF;
+	frameNo = 0;
+	objectHandles = NULL; 
+	objectInfo.fileName = NULL;
+    objectInfo.captureDate = NULL;
+    objectInfo.modificationDate = NULL;
+    objectInfo.keyWords = NULL;
+    deviceInfo.vendorExtensionDesc = NULL;
+    deviceInfo.operationsSupported = NULL;
+    deviceInfo.eventsSupported = NULL;
+    deviceInfo.devicePropertiesSupported = NULL;
+    deviceInfo.captureFormats = NULL;
+    deviceInfo.imageFormats = NULL;
+    deviceInfo.manufacturer = NULL;
+    deviceInfo.model = NULL;
+    deviceInfo.deviceVersion = NULL;
+    deviceInfo.serialNumber = NULL;
+	deviceProperty.defaultValue = NULL;
+    deviceProperty.currentValue = NULL; 
+	deviceProperty.form.rangeForm.maximumValue = NULL;
+    deviceProperty.form.rangeForm.minimumValue = NULL;
+    deviceProperty.form.rangeForm.stepSize = NULL;
+	deviceProperty.form.enumForm.supportedValue = NULL; 
+	deviceProperty.form.enumForm.numberOfValues = 0; 
+}
+
+void libexf1::exf1Cmd(WORD cmd, ...)
 {
     DWORD dwordVal;
     WORD wordVal;
@@ -168,7 +183,7 @@ void exf1Cmd(WORD cmd, ...)
     va_end(ap);
 }
 
-void usbTx(WORD cmd, WORD cmdType, int nCmdParameterBytes, DWORD cmdParameter1, DWORD cmdParameter2) {
+void libexf1::usbTx(WORD cmd, WORD cmdType, int nCmdParameterBytes, DWORD cmdParameter1, DWORD cmdParameter2) {
 
     PTP_CONTAINER tx;
     int packetSize = 12 + nCmdParameterBytes;
@@ -206,7 +221,7 @@ void usbTx(WORD cmd, WORD cmdType, int nCmdParameterBytes, DWORD cmdParameter1, 
     USB_CMD_ID++;
 }
 
-int usbRx() {
+int libexf1::usbRx() {
 
     int bytesRead = -1;
 
@@ -250,7 +265,8 @@ int usbRx() {
 
                     case CMD_GET_STILL_HANDLES:
                     case CMD_GET_MOVIE_HANDLES:
-                        free(objectHandles);
+                        if (objectHandles)
+							free(objectHandles);
                         getDwordDataSet(&objectHandles, rx->payload.data);
                         //printDwordDataSet("ObjectHandles   : ", objectHandles);
                         break; 
@@ -287,7 +303,7 @@ int usbRx() {
     return bytesRead;
 }
 
-int usbRxToFile(char *fileName) {
+int libexf1::usbRxToFile(char *fileName) {
 
     FILE *pFile;
     
@@ -338,7 +354,7 @@ int usbRxToFile(char *fileName) {
     return bytesRemaining;
 }
 
-int usbRxToMem(char *jpgImage, int *jpgSize) {
+int libexf1::usbRxToMem(char *jpgImage, int *jpgSize) {
 
     int bytesRead = -1;
     int bytesRemaining = -1;
@@ -394,7 +410,7 @@ int usbRxToMem(char *jpgImage, int *jpgSize) {
     return bytesRemaining;
 }
 
-int usbRxEvent(){
+int libexf1::usbRxEvent(){
 
 //    char tmpBuffer[16];
 
@@ -454,7 +470,7 @@ int usbRxEvent(){
     return bytesRead;
 }
 
-void usbGetStatus() {
+void libexf1::usbGetStatus() {
 
     char statusBytes[2];
     
@@ -467,55 +483,65 @@ void usbGetStatus() {
     //printf("02 status: 0x%02x\n", statusBytes);
 }
 
-WORD getStringDataSet(STRING_DATA_SET **dst, char *src) {
+WORD libexf1::getStringDataSet(STRING_DATA_SET **dst, char *src) {
 
     WORD byteSize;
     STRING_DATA_SET *sds = (STRING_DATA_SET *) src;
 
     byteSize = (sds->noItems) * sizeof(WORD) + 1;
-    *dst     = malloc(byteSize);
+    *dst     = (STRING_DATA_SET *) malloc(byteSize);
     memcpy(*dst, sds, byteSize);
 
     return byteSize;
 }
 
-DWORD getWordDataSet(WORD_DATA_SET **dst, char *src) {
+DWORD libexf1::getWordDataSet(WORD_DATA_SET **dst, char *src) {
 
     DWORD byteSize;
     WORD_DATA_SET *wds = (WORD_DATA_SET *) src;
 
     byteSize = (wds->noItems + 2) * sizeof(WORD);
-    *dst     = malloc(byteSize);
+    *dst     = (WORD_DATA_SET *) malloc(byteSize);
     memcpy(*dst, wds, byteSize);
 
     return byteSize;
 }
 
-DWORD getDwordDataSet(DWORD_DATA_SET **dst, char *src) {
+DWORD libexf1::getDwordDataSet(DWORD_DATA_SET **dst, char *src) {
 
     DWORD byteSize;
     DWORD_DATA_SET *wds = (DWORD_DATA_SET *) src;
 
     byteSize = (wds->noItems + 1) * sizeof(DWORD);
-    *dst     = malloc(byteSize);
+    *dst     = (DWORD_DATA_SET *) malloc(byteSize);
     memcpy(*dst, wds, byteSize);
 
     return byteSize;
 }
 
-void setDeviceInfo(char *pData) {
+void libexf1::setDeviceInfo(char *pData) {
 
     // Free up old data sets. 
-    free(deviceInfo.vendorExtensionDesc);
-    free(deviceInfo.operationsSupported);
-    free(deviceInfo.eventsSupported);
-    free(deviceInfo.devicePropertiesSupported);
-    free(deviceInfo.captureFormats);
-    free(deviceInfo.imageFormats);
-    free(deviceInfo.manufacturer);
-    free(deviceInfo.model);
-    free(deviceInfo.deviceVersion);
-    free(deviceInfo.serialNumber);
+	if (deviceInfo.vendorExtensionDesc)
+		free(deviceInfo.vendorExtensionDesc);
+    if (deviceInfo.operationsSupported)
+		free(deviceInfo.operationsSupported);
+    if (deviceInfo.eventsSupported)
+		free(deviceInfo.eventsSupported);
+    if (deviceInfo.devicePropertiesSupported)
+		free(deviceInfo.devicePropertiesSupported);
+    if (deviceInfo.captureFormats)
+		free(deviceInfo.captureFormats);
+    if (deviceInfo.imageFormats)
+		free(deviceInfo.imageFormats);
+    if (deviceInfo.manufacturer)
+		free(deviceInfo.manufacturer);
+    if (deviceInfo.model)
+		free(deviceInfo.model);
+    if (deviceInfo.deviceVersion)
+		free(deviceInfo.deviceVersion);
+    if (deviceInfo.serialNumber)
+		free(deviceInfo.serialNumber);
 
     // Retrieve new device info from packet.
     deviceInfo.standardVersion          = GET_WORD (pData);  pData += sizeof(WORD);
@@ -535,7 +561,7 @@ void setDeviceInfo(char *pData) {
 
 }
 
-void printStringDataSet(char *pDescrition, STRING_DATA_SET *pDataSet) {
+void libexf1::printStringDataSet(char *pDescrition, STRING_DATA_SET *pDataSet) {
     
     int i;
     printf("%s", pDescrition);
@@ -545,7 +571,7 @@ void printStringDataSet(char *pDescrition, STRING_DATA_SET *pDataSet) {
     
 }
 
-void printWordDataSet(char *pDescrition, WORD_DATA_SET *pDataSet) {
+void libexf1::printWordDataSet(char *pDescrition, WORD_DATA_SET *pDataSet) {
 
     DWORD i;
     printf("%s", pDescrition);
@@ -555,7 +581,7 @@ void printWordDataSet(char *pDescrition, WORD_DATA_SET *pDataSet) {
 
 }
 
-void printDwordDataSet(char *pDescrition, DWORD_DATA_SET *pDataSet) {
+void libexf1::printDwordDataSet(char *pDescrition, DWORD_DATA_SET *pDataSet) {
 
     DWORD i;
     printf("%s", pDescrition);
@@ -565,7 +591,7 @@ void printDwordDataSet(char *pDescrition, DWORD_DATA_SET *pDataSet) {
 
 }
 
-void printDeviceInfo() {
+void libexf1::printDeviceInfo() {
 
     printStringDataSet("Manufacturer  : ", deviceInfo.manufacturer);
     printStringDataSet("Model         : ", deviceInfo.model);
@@ -580,7 +606,7 @@ void printDeviceInfo() {
 
 }
 
-void printEnumDataSet(char *pDescrition, ENUM_FORM *pDataSet, WORD dataType) {
+void libexf1::printEnumDataSet(char *pDescrition, ENUM_FORM *pDataSet, WORD dataType) {
 
     int i;
     printf("%s", pDescrition);
@@ -604,25 +630,31 @@ void printEnumDataSet(char *pDescrition, ENUM_FORM *pDataSet, WORD dataType) {
 
 }
 
-void setDeviceProperty(char *pData) {
+void libexf1::setDeviceProperty(char *pData) {
 
     int i; 
 
     // Free up old data sets.
-    free(deviceProperty.defaultValue);
-    free(deviceProperty.currentValue);
+	if (deviceProperty.defaultValue)
+		free(deviceProperty.defaultValue);
+	if (deviceProperty.currentValue)
+		free(deviceProperty.currentValue);
 
     switch (deviceProperty.formFlag) {
         case PROPERTY_FORM_RANGE:
-            free(deviceProperty.form.rangeForm.maximumValue);
-            free(deviceProperty.form.rangeForm.minimumValue);
-            free(deviceProperty.form.rangeForm.stepSize);
+			if (deviceProperty.form.rangeForm.maximumValue) 
+				free(deviceProperty.form.rangeForm.maximumValue);
+			if (deviceProperty.form.rangeForm.minimumValue)
+				free(deviceProperty.form.rangeForm.minimumValue);
+			if (deviceProperty.form.rangeForm.stepSize) 
+				free(deviceProperty.form.rangeForm.stepSize);
             break;
             
         case PROPERTY_FORM_ENUM:
             for (i=0; i<deviceProperty.form.enumForm.numberOfValues; i++)
                 free(deviceProperty.form.enumForm.supportedValue[i]);
-            free(deviceProperty.form.enumForm.supportedValue);
+            if (deviceProperty.form.enumForm.supportedValue)
+				free(deviceProperty.form.enumForm.supportedValue);
             break;
              
     }
@@ -714,7 +746,7 @@ void setDeviceProperty(char *pData) {
             deviceProperty.form.enumForm.numberOfValues = GET_WORD(pData); pData += sizeof(WORD);
             switch (deviceProperty.dataType) {
                 case DATA_TYPE_CHAR:
-                    deviceProperty.form.enumForm.supportedValue = malloc(deviceProperty.form.enumForm.numberOfValues * sizeof(char*));
+                    deviceProperty.form.enumForm.supportedValue = (void **) malloc(deviceProperty.form.enumForm.numberOfValues * sizeof(char*));
                     for (i=0; i<deviceProperty.form.enumForm.numberOfValues ; i++) {
                         deviceProperty.form.enumForm.supportedValue[i]  = malloc(sizeof(char));
                         *(char *)deviceProperty.form.enumForm.supportedValue[i] = *pData; pData += sizeof(char);
@@ -722,7 +754,7 @@ void setDeviceProperty(char *pData) {
                     break;
 
                 case DATA_TYPE_WORD:
-                    deviceProperty.form.enumForm.supportedValue = malloc(deviceProperty.form.enumForm.numberOfValues * sizeof(WORD*));
+                    deviceProperty.form.enumForm.supportedValue = (void **) malloc(deviceProperty.form.enumForm.numberOfValues * sizeof(WORD*));
                     for (i=0; i<deviceProperty.form.enumForm.numberOfValues ; i++) {
                         deviceProperty.form.enumForm.supportedValue[i]  = malloc(sizeof(WORD));
                         *(WORD *)deviceProperty.form.enumForm.supportedValue[i] = GET_WORD(pData); pData += sizeof(WORD);
@@ -730,7 +762,7 @@ void setDeviceProperty(char *pData) {
                     break;
 
                 case DATA_TYPE_DWORD:
-                    deviceProperty.form.enumForm.supportedValue = malloc(deviceProperty.form.enumForm.numberOfValues * sizeof(DWORD*));
+                    deviceProperty.form.enumForm.supportedValue = (void **) malloc(deviceProperty.form.enumForm.numberOfValues * sizeof(DWORD*));
                     for (i=0; i<deviceProperty.form.enumForm.numberOfValues ; i++) {
                         deviceProperty.form.enumForm.supportedValue[i]  = malloc(sizeof(DWORD));
                         *(DWORD *)deviceProperty.form.enumForm.supportedValue[i] = GET_DWORD(pData); pData += sizeof(DWORD);
@@ -738,7 +770,7 @@ void setDeviceProperty(char *pData) {
                     break;
 
                 case DATA_TYPE_STRING:
-                    deviceProperty.form.enumForm.supportedValue = malloc(deviceProperty.form.enumForm.numberOfValues * sizeof(char*));
+                    deviceProperty.form.enumForm.supportedValue = (void **) malloc(deviceProperty.form.enumForm.numberOfValues * sizeof(char*));
                     for (i=0; i<deviceProperty.form.enumForm.numberOfValues ; i++) {
                         deviceProperty.form.enumForm.supportedValue[i]  = malloc(255*sizeof(char));
                         pData += getStringDataSet((STRING_DATA_SET **)&deviceProperty.form.enumForm.supportedValue[i], pData);
@@ -756,7 +788,7 @@ void setDeviceProperty(char *pData) {
 
 }
 
-void printDeviceProperty() {
+void libexf1::printDeviceProperty() {
 
     printf("Code     : 0x%02X\n", deviceProperty.code);
     printf("DataType : 0x%02X\n", deviceProperty.dataType);
@@ -780,8 +812,8 @@ void printDeviceProperty() {
             break;
 
         case DATA_TYPE_STRING:
-            printStringDataSet("Default  : ", deviceProperty.defaultValue);
-            printStringDataSet("Current  : ", deviceProperty.currentValue);
+            printStringDataSet("Default  : ", (STRING_DATA_SET *) deviceProperty.defaultValue);
+            printStringDataSet("Current  : ", (STRING_DATA_SET *) deviceProperty.currentValue);
             break;
 
         default:
@@ -813,9 +845,9 @@ void printDeviceProperty() {
                     break;
 
                 case DATA_TYPE_STRING:
-                    printStringDataSet("Minimum  : ", deviceProperty.form.rangeForm.minimumValue);
-                    printStringDataSet("Maximum  : ", deviceProperty.form.rangeForm.maximumValue);
-                    printStringDataSet("StepSize : ", deviceProperty.form.rangeForm.stepSize);
+                    printStringDataSet("Minimum  : ", (STRING_DATA_SET *) deviceProperty.form.rangeForm.minimumValue);
+                    printStringDataSet("Maximum  : ", (STRING_DATA_SET *) deviceProperty.form.rangeForm.maximumValue);
+                    printStringDataSet("StepSize : ", (STRING_DATA_SET *) deviceProperty.form.rangeForm.stepSize);
                     break;
 
                 default:
@@ -834,13 +866,17 @@ void printDeviceProperty() {
 
 
 
-void setObjectInfo(char *pData) {
+void libexf1::setObjectInfo(char *pData) {
 
     // Free up old data sets.
-    free(objectInfo.fileName);
-    free(objectInfo.captureDate);
-    free(objectInfo.modificationDate);
-    free(objectInfo.keyWords);
+	if (objectInfo.fileName) 
+		free(objectInfo.fileName);
+	if (objectInfo.captureDate)
+		free(objectInfo.captureDate);
+	if (objectInfo.modificationDate)
+		free(objectInfo.modificationDate);
+	if (objectInfo.keyWords)
+		free(objectInfo.keyWords);
 
     // Retrieve new object info from packet.
     objectInfo.storageId = GET_DWORD(pData);  pData += sizeof(DWORD);
@@ -865,7 +901,7 @@ void setObjectInfo(char *pData) {
 
 }
 
-void printObjectInfo() {
+void libexf1::printObjectInfo() {
 
     printStringDataSet("Filename        : ", objectInfo.fileName);
     printStringDataSet("CaptureDate     : ", objectInfo.captureDate);
@@ -886,7 +922,7 @@ void printObjectInfo() {
 
 }
 
-int usbInit()
+int libexf1::usbInit()
 {
     usb_init();
     usb_find_busses();
@@ -933,7 +969,7 @@ int usbInit()
     return 1; 
 }
 
-usb_dev_handle *open_dev(void)
+usb_dev_handle* libexf1::open_dev(void)
 {
   struct usb_bus *bus;
   struct usb_device *dev;

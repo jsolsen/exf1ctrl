@@ -202,18 +202,6 @@
 #define EVT_FOCUS_OK        0xC014
 #define EVT_UNKNOWN_CHANGED 0xC015
 
-struct _WORD_DATA_SET {
-    DWORD noItems;
-    WORD  data[];
-};
-typedef struct _WORD_DATA_SET WORD_DATA_SET;
-
-struct _DWORD_DATA_SET {
-    DWORD noItems;
-    DWORD  data[];
-};
-typedef struct _DWORD_DATA_SET DWORD_DATA_SET;
-
 // GCC pack pragmas.
 #ifdef __GNUC__
     #define PACK( __Declaration__ ) __Declaration__ __attribute__((__packed__))
@@ -223,81 +211,6 @@ typedef struct _DWORD_DATA_SET DWORD_DATA_SET;
 #ifdef _MSC_VER
     #define PACK( __Declaration__ ) __pragma( pack(push, 1) ) __Declaration__ __pragma( pack(pop) )
 #endif
-
-PACK(
-struct _STRING_DATA_SET {
-    char noItems;
-    WORD data[];
-});
-
-typedef struct _STRING_DATA_SET STRING_DATA_SET;
-
-struct _PTP_CONTAINER {
-    DWORD length;
-    WORD  type;
-    WORD  code;
-    DWORD trans_id;
-    union {
-        struct {
-            WORD param1;
-            WORD param2;
-            WORD param3;
-            WORD param4;
-        } word_params;
-        struct {
-            DWORD param1;
-            DWORD param2;
-        } dword_params;
-        char data[BUF_SIZE-12];
-    } payload;
-};
-typedef struct _PTP_CONTAINER PTP_CONTAINER;
-
-struct _PTP_DEVICE_INFO {
-    WORD  standardVersion;
-    DWORD vendorExtensionID;
-    WORD  vendorExtensionVersion;
-    STRING_DATA_SET *vendorExtensionDesc;
-    WORD  functionalMode;
-    WORD_DATA_SET *operationsSupported;
-    WORD_DATA_SET *eventsSupported;
-    WORD_DATA_SET *devicePropertiesSupported;
-    WORD_DATA_SET *captureFormats;
-    WORD_DATA_SET *imageFormats;
-    STRING_DATA_SET *manufacturer;
-    STRING_DATA_SET *model;
-    STRING_DATA_SET *deviceVersion;
-    STRING_DATA_SET *serialNumber;
-};
-typedef struct _PTP_DEVICE_INFO PTP_DEVICE_INFO;
-
-struct _RANGE_FORM {
-    void *minimumValue;
-    void *maximumValue;
-    void *stepSize;
-};
-typedef struct _RANGE_FORM RANGE_FORM;
-
-struct _ENUM_FORM {
-    WORD numberOfValues;
-    void **supportedValue;
-};
-typedef struct _ENUM_FORM ENUM_FORM;
-
-PACK(
-struct _PTP_DEVICE_PROPERTY {
-    WORD code;
-    WORD dataType;
-    char getSet;
-    void *defaultValue;
-    void *currentValue;
-    char formFlag;
-    union {
-        ENUM_FORM enumForm;
-        RANGE_FORM rangeForm;
-    } form;
-});
-typedef struct _PTP_DEVICE_PROPERTY PTP_DEVICE_PROPERTY;
 
 #define PROPERTY_FORM_NONE  	0x00
 #define PROPERTY_FORM_RANGE     0x01
@@ -311,73 +224,172 @@ typedef struct _PTP_DEVICE_PROPERTY PTP_DEVICE_PROPERTY;
 #define TO_FILE                 1
 #define TO_MEM                  2
 
-struct _PTP_OBJECT_INFO {
-	DWORD storageId;
-	WORD objectFormat;
-	WORD protectionStatus;
-	DWORD objectCompressedSize;
-	WORD thumbFormat;
-	DWORD thumbCompressedSize;
-	DWORD thumbPixWidth;
-	DWORD thumbPixHeight;
-	DWORD imagePixWidth;
-	DWORD imagePixHeight;
-	DWORD imageBitDepth;
-	DWORD parentObject;
-	WORD associationType;
-	DWORD associationDesc;
-	DWORD sequenceNumber;
-	STRING_DATA_SET *fileName;
-	STRING_DATA_SET *captureDate;
-	STRING_DATA_SET *modificationDate;
-	STRING_DATA_SET *keyWords;
+
+class libexf1 {
+
+	public:
+
+	libexf1(); 
+
+	struct _WORD_DATA_SET {
+		DWORD noItems;
+		WORD  data[];
+	};
+	typedef struct _WORD_DATA_SET WORD_DATA_SET;
+
+	struct _DWORD_DATA_SET {
+		DWORD noItems;
+		DWORD  data[];
+	};
+	typedef struct _DWORD_DATA_SET DWORD_DATA_SET;
+
+
+	PACK(
+	struct _STRING_DATA_SET {
+		char noItems;
+		WORD data[];
+	});
+
+	typedef struct _STRING_DATA_SET STRING_DATA_SET;
+
+	struct _PTP_CONTAINER {
+		DWORD length;
+		WORD  type;
+		WORD  code;
+		DWORD trans_id;
+		union {
+			struct {
+				WORD param1;
+				WORD param2;
+				WORD param3;
+				WORD param4;
+			} word_params;
+			struct {
+				DWORD param1;
+				DWORD param2;
+			} dword_params;
+			char data[BUF_SIZE-12];
+		} payload;
+	};
+	typedef struct _PTP_CONTAINER PTP_CONTAINER;
+
+	struct _PTP_DEVICE_INFO {
+		WORD  standardVersion;
+		DWORD vendorExtensionID;
+		WORD  vendorExtensionVersion;
+		STRING_DATA_SET *vendorExtensionDesc;
+		WORD  functionalMode;
+		WORD_DATA_SET *operationsSupported;
+		WORD_DATA_SET *eventsSupported;
+		WORD_DATA_SET *devicePropertiesSupported;
+		WORD_DATA_SET *captureFormats;
+		WORD_DATA_SET *imageFormats;
+		STRING_DATA_SET *manufacturer;
+		STRING_DATA_SET *model;
+		STRING_DATA_SET *deviceVersion;
+		STRING_DATA_SET *serialNumber;
+	};
+	typedef struct _PTP_DEVICE_INFO PTP_DEVICE_INFO;
+
+	struct _RANGE_FORM {
+		void *minimumValue;
+		void *maximumValue;
+		void *stepSize;
+	};
+	typedef struct _RANGE_FORM RANGE_FORM;
+
+	struct _ENUM_FORM {
+		WORD numberOfValues;
+		void **supportedValue;
+	};
+	typedef struct _ENUM_FORM ENUM_FORM;
+
+	PACK(
+	struct _PTP_DEVICE_PROPERTY {
+		WORD code;
+		WORD dataType;
+		char getSet;
+		void *defaultValue;
+		void *currentValue;
+		char formFlag;
+		union {
+			ENUM_FORM enumForm;
+			RANGE_FORM rangeForm;
+		} form;
+	});
+	typedef struct _PTP_DEVICE_PROPERTY PTP_DEVICE_PROPERTY;
+
+	struct _PTP_OBJECT_INFO {
+		DWORD storageId;
+		WORD objectFormat;
+		WORD protectionStatus;
+		DWORD objectCompressedSize;
+		WORD thumbFormat;
+		DWORD thumbCompressedSize;
+		DWORD thumbPixWidth;
+		DWORD thumbPixHeight;
+		DWORD imagePixWidth;
+		DWORD imagePixHeight;
+		DWORD imageBitDepth;
+		DWORD parentObject;
+		WORD associationType;
+		DWORD associationDesc;
+		DWORD sequenceNumber;
+		STRING_DATA_SET *fileName;
+		STRING_DATA_SET *captureDate;
+		STRING_DATA_SET *modificationDate;
+		STRING_DATA_SET *keyWords;
+	};
+	typedef struct _PTP_OBJECT_INFO PTP_OBJECT_INFO;
+
+	usb_dev_handle *open_dev(void);
+
+	void exf1Cmd(WORD cmd, ...);
+	void usbCmdGen(short int cmd, short int postCmdReads, int nCmdParameters, char cmdParameters[]);
+	void usbTx(WORD cmd, WORD cmdType, int nCmdParameterBytes, DWORD cmdParameter1, DWORD cmdParameter2);
+	int usbRx();
+	int usbRxToFile(char *fileName);
+	int usbRxToMem(char *jpgImage, int *jpgSize);
+	int usbRxEvent(); 
+	void usbGetStatus();
+	int usbInit();
+
+	void printStringDataSet(char *pDescrition, STRING_DATA_SET *pDataSet);
+	void printWordDataSet(char *pDescrition, WORD_DATA_SET *pDataSet);
+	void printDwordDataSet(char *pDescrition, DWORD_DATA_SET *pDataSet);
+
+	void setDeviceInfo(char *pData);
+	void printDeviceInfo();
+
+	void printEnumDataSet(char *pDescrition, ENUM_FORM *pDataSet, WORD dataType);
+	void setDeviceProperty(char *pData); 
+	void printDeviceProperty();
+
+	void setObjectInfo(char *pData);
+	void printObjectInfo();
+
+	WORD getStringDataSet(STRING_DATA_SET **dst, char *src);
+	DWORD getWordDataSet(WORD_DATA_SET **dst, char *src);
+	DWORD getDwordDataSet(DWORD_DATA_SET **dst, char *src);
+
+	void startConfig(char enableStillImage, char enablePreRecord);
+	void stopConfig();
+
+	usb_dev_handle *dev;
+	char tmp[BUF_SIZE];
+	char img[IMG_BUF_SIZE];
+	char interruptBuffer[24]; 
+	PTP_DEVICE_INFO deviceInfo;
+	PTP_DEVICE_PROPERTY deviceProperty;
+	PTP_OBJECT_INFO objectInfo;
+	DWORD_DATA_SET *objectHandles;
+	PTP_CONTAINER *rx; 
+	DWORD zoomSetting;
+	DWORD focusSetting;
+	DWORD USB_CMD_ID;
+	DWORD frameNo;
+
 };
-typedef struct _PTP_OBJECT_INFO PTP_OBJECT_INFO;
-
-usb_dev_handle *open_dev(void);
-
-void exf1Cmd(WORD cmd, ...);
-void usbCmdGen(short int cmd, short int postCmdReads, int nCmdParameters, char cmdParameters[]);
-void usbTx(WORD cmd, WORD cmdType, int nCmdParameterBytes, DWORD cmdParameter1, DWORD cmdParameter2);
-int usbRx();
-int usbRxToFile(char *fileName);
-int usbRxToMem(char *jpgImage, int *jpgSize);
-int usbRxEvent(); 
-void usbGetStatus();
-int usbInit();
-
-void printStringDataSet(char *pDescrition, STRING_DATA_SET *pDataSet);
-void printWordDataSet(char *pDescrition, WORD_DATA_SET *pDataSet);
-void printDwordDataSet(char *pDescrition, DWORD_DATA_SET *pDataSet);
-
-void setDeviceInfo(char *pData);
-void printDeviceInfo();
-
-void printEnumDataSet(char *pDescrition, ENUM_FORM *pDataSet, WORD dataType);
-void setDeviceProperty(char *pData); 
-void printDeviceProperty();
-
-void setObjectInfo(char *pData);
-void printObjectInfo();
-
-WORD getStringDataSet(STRING_DATA_SET **dst, char *src);
-DWORD getWordDataSet(WORD_DATA_SET **dst, char *src);
-DWORD getDwordDataSet(DWORD_DATA_SET **dst, char *src);
-
-void startConfig(char enableStillImage, char enablePreRecord);
-void stopConfig();
-
-extern usb_dev_handle *dev;
-extern char tmp[BUF_SIZE];
-extern char img[IMG_BUF_SIZE];
-extern PTP_DEVICE_INFO deviceInfo;
-extern PTP_DEVICE_PROPERTY deviceProperty;
-extern PTP_OBJECT_INFO objectInfo;
-extern DWORD_DATA_SET *objectHandles;
-extern DWORD zoomSetting;
-extern DWORD focusSetting;
-extern DWORD USB_CMD_ID;
-extern DWORD frameNo; 
 
 #endif	/* LIBEXF1_H */
 

@@ -86,7 +86,7 @@
     <ClInclude Include="..\..\..\..\src\exf1Opencv.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\..\src\exf1Opencv.c" />
+    <ClCompile Include="..\..\..\..\src\exf1Opencv.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -1,20 +1,23 @@
 #include "exf1api.h"
 
-char halfShutterPressed = FALSE;
-char stillImageEnabled = TRUE;
-char preRecordEnabled  = FALSE;
-char continousShutterEnabled = FALSE; 
-
-int initCamera(void)
+exf1api::exf1api()
 {
-    if (usbInit() == 0)
+	halfShutterPressed = FALSE;
+	stillImageEnabled = TRUE;
+	preRecordEnabled  = FALSE;
+	continousShutterEnabled = FALSE; 
+}
+
+int exf1api::initCamera(void)
+{
+    if (lib.usbInit() == 0)
         exit(0);
 
     // Print out device info.
     //exf1Cmd(CMD_GET_DEVICE_INFO);
 
-    exf1Cmd(CMD_OPEN_SESSION, SESSION_ID);
-    exf1Cmd(CMD_WRITE, ADDR_FUNCTIONALITY, DATA_FUNC_EXTENDED);
+    lib.exf1Cmd(CMD_OPEN_SESSION, SESSION_ID);
+    lib.exf1Cmd(CMD_WRITE, ADDR_FUNCTIONALITY, DATA_FUNC_EXTENDED);
 
     // Print out device info.
     //exf1Cmd(CMD_GET_DEVICE_INFO);
@@ -34,84 +37,84 @@ int initCamera(void)
     return 1;
 }
 
-void zoom(char zoomIn, char continousZoom) {
+void exf1api::zoom(char zoomIn, char continousZoom) {
 
     if (continousZoom) {
         printf("> Press enter to stop zooming...");
         if (zoomIn) {
-            exf1Cmd(CMD_CZ_PRESS, DATA_ZOOM_IN);
+            lib.exf1Cmd(CMD_CZ_PRESS, DATA_ZOOM_IN);
             getchar();
-            exf1Cmd(CMD_CZ_RELEASE);
+            lib.exf1Cmd(CMD_CZ_RELEASE);
         }
         else {
-            exf1Cmd(CMD_CZ_PRESS, DATA_ZOOM_OUT);
+            lib.exf1Cmd(CMD_CZ_PRESS, DATA_ZOOM_OUT);
             getchar(); 
-            exf1Cmd(CMD_CZ_RELEASE);
+            lib.exf1Cmd(CMD_CZ_RELEASE);
         }
     }
     else {
         if (zoomIn)
-            exf1Cmd(CMD_ZOOM, DATA_ZOOM_IN);
+            lib.exf1Cmd(CMD_ZOOM, DATA_ZOOM_IN);
         else
-            exf1Cmd(CMD_ZOOM, DATA_ZOOM_OUT);
+            lib.exf1Cmd(CMD_ZOOM, DATA_ZOOM_OUT);
     }
 }
 
-void focus(char focusIn, char continousFocus) {
+void exf1api::focus(char focusIn, char continousFocus) {
 
     if (continousFocus) {
         printf("> Press enter to stop focusing...");
         if (focusIn) {
-            exf1Cmd(CMD_CF_PRESS, DATA_FOCUS_IN);
+            lib.exf1Cmd(CMD_CF_PRESS, DATA_FOCUS_IN);
             getchar(); 
-            exf1Cmd(CMD_CF_RELEASE);
+            lib.exf1Cmd(CMD_CF_RELEASE);
         }
         else {
-            exf1Cmd(CMD_CF_PRESS, DATA_FOCUS_OUT);
+            lib.exf1Cmd(CMD_CF_PRESS, DATA_FOCUS_OUT);
             getchar(); 
-            exf1Cmd(CMD_CF_RELEASE);
+            lib.exf1Cmd(CMD_CF_RELEASE);
         }
     }
     else {
         if (focusIn)
-            exf1Cmd(CMD_FOCUS, DATA_FOCUS_IN);
+            lib.exf1Cmd(CMD_FOCUS, DATA_FOCUS_IN);
         else
-            exf1Cmd(CMD_FOCUS, DATA_FOCUS_OUT);
+            lib.exf1Cmd(CMD_FOCUS, DATA_FOCUS_OUT);
     }
 }
 
-void halfShutter(void)
+void exf1api::halfShutter(void)
 {
     if (halfShutterPressed == FALSE) {
-        exf1Cmd(CMD_HALF_PRESS);
+        lib.exf1Cmd(CMD_HALF_PRESS);
         halfShutterPressed = TRUE; 
     }
     else {
-        exf1Cmd(CMD_HALF_RELEASE);
+        lib.exf1Cmd(CMD_HALF_RELEASE);
         halfShutterPressed = FALSE; 
     }
 }
 
-void shutter(char *fileName, char *thumbNail, int delay)
+void exf1api::shutter(char *fileName, char *thumbNail, int delay)
 {
     DWORD i;
     //char newFileName[255], newThumbNail[255];
 
     if (continousShutterEnabled) {
-        exf1Cmd(CMD_CS_PRESS);
+        lib.exf1Cmd(CMD_CS_PRESS);
         if (delay >= 0)
             Sleep(1000 * delay);
         else
             printf("> Press enter to stop recording... "), getchar();
-        exf1Cmd(CMD_CS_RELEASE, preRecordEnabled);
+        lib.exf1Cmd(CMD_CS_RELEASE, preRecordEnabled);
     }
     else 
-        exf1Cmd(CMD_SHUTTER);
+        lib.exf1Cmd(CMD_SHUTTER);
 
-    exf1Cmd(CMD_GET_STILL_HANDLES);
+    lib.exf1Cmd(CMD_GET_STILL_HANDLES);
 
     if (continousShutterEnabled) {
-        for (i=0; i<objectHandles->noItems; i++) {
+        for (i=0; i<lib.objectHandles->noItems; i++) {
 
             // Generate new file name.
             /*
@@ -122,34 +125,34 @@ void shutter(char *fileName, char *thumbNail, int delay)
 */
             printf("> Downloading %s and %s...\n", fileName, thumbNail);
 
-            exf1Cmd(CMD_GET_OBJECT_INFO, objectHandles->data[i]);
-            exf1Cmd(CMD_GET_OBJECT,    TO_FILE, objectHandles->data[i], fileName);
-            exf1Cmd(CMD_GET_THUMBNAIL, TO_FILE, objectHandles->data[i], thumbNail);
+            lib.exf1Cmd(CMD_GET_OBJECT_INFO, lib.objectHandles->data[i]);
+            lib.exf1Cmd(CMD_GET_OBJECT,    TO_FILE, lib.objectHandles->data[i], fileName);
+            lib.exf1Cmd(CMD_GET_THUMBNAIL, TO_FILE, lib.objectHandles->data[i], thumbNail);
 
         }
     }
     else {
-        exf1Cmd(CMD_GET_OBJECT_INFO, objectHandles->data[0]);
-        exf1Cmd(CMD_GET_OBJECT,    TO_FILE, objectHandles->data[0], fileName);
-        exf1Cmd(CMD_GET_THUMBNAIL, TO_FILE, objectHandles->data[0], thumbNail);
+        lib.exf1Cmd(CMD_GET_OBJECT_INFO, lib.objectHandles->data[0]);
+        lib.exf1Cmd(CMD_GET_OBJECT,    TO_FILE, lib.objectHandles->data[0], fileName);
+        lib.exf1Cmd(CMD_GET_THUMBNAIL, TO_FILE, lib.objectHandles->data[0], thumbNail);
     }
-    exf1Cmd(CMD_STILL_RESET);
+    lib.exf1Cmd(CMD_STILL_RESET);
 }
 
-void setupShutter(SHUTTER_MODES shutterMode, char enablePreRecord)
+void exf1api::setupShutter(SHUTTER_MODES shutterMode, char enablePreRecord)
 {
     stopConfig();
     switch(shutterMode) {
         case SHUTTER_NORMAL:
-            exf1Cmd(CMD_WRITE, ADDR_CAPTURE_MODE, DATA_CAPTURE_NORMAL);
+            lib.exf1Cmd(CMD_WRITE, ADDR_CAPTURE_MODE, DATA_CAPTURE_NORMAL);
             continousShutterEnabled = FALSE;
             break;
         case SHUTTER_CONTINOUS:
-            exf1Cmd(CMD_WRITE, ADDR_CAPTURE_MODE, DATA_CAPTURE_CS);
+            lib.exf1Cmd(CMD_WRITE, ADDR_CAPTURE_MODE, DATA_CAPTURE_CS);
             continousShutterEnabled = TRUE;
             break;
         case SHUTTER_PRERECORD:
-            exf1Cmd(CMD_WRITE, ADDR_CAPTURE_MODE, DATA_CAPTURE_PREREC);
+            lib.exf1Cmd(CMD_WRITE, ADDR_CAPTURE_MODE, DATA_CAPTURE_PREREC);
             continousShutterEnabled = TRUE;
             break;
     }
@@ -159,22 +162,22 @@ void setupShutter(SHUTTER_MODES shutterMode, char enablePreRecord)
     //usbCmdGen(0x1015, TWO_READS, 4, (char[]){0x0D, 0xD0, 0x00, 0x00});
 
     stopConfig();
-    exf1Cmd(CMD_WRITE, ADDR_FOCUS, DATA_FOCUS_AF);
+    lib.exf1Cmd(CMD_WRITE, ADDR_FOCUS, DATA_FOCUS_AF);
     startConfig(FALSE, enablePreRecord);
 }
 
-void setupMovie(MOVIE_MODES movieMode, char enablePreRecord)
+void exf1api::setupMovie(MOVIE_MODES movieMode, char enablePreRecord)
 {
     stopConfig();
     switch (movieMode) {
         case MOVIE_STD:
-            exf1Cmd(CMD_WRITE, ADDR_MOVIE_MODE, DATA_MOVIE_MODE_STD);
+            lib.exf1Cmd(CMD_WRITE, ADDR_MOVIE_MODE, DATA_MOVIE_MODE_STD);
             break;    
         case MOVIE_HD:
-            exf1Cmd(CMD_WRITE, ADDR_MOVIE_MODE, DATA_MOVIE_MODE_HD);
+            lib.exf1Cmd(CMD_WRITE, ADDR_MOVIE_MODE, DATA_MOVIE_MODE_HD);
             break;
         case MOVIE_HS:
-            exf1Cmd(CMD_WRITE, ADDR_MOVIE_MODE, DATA_MOVIE_MODE_HS);
+            lib.exf1Cmd(CMD_WRITE, ADDR_MOVIE_MODE, DATA_MOVIE_MODE_HS);
             break;
     }
     startConfig(FALSE, enablePreRecord);
@@ -183,99 +186,99 @@ void setupMovie(MOVIE_MODES movieMode, char enablePreRecord)
     //usbCmdGen(0x1015, TWO_READS, 4, (char[]){0x0D, 0xD0, 0x00, 0x00});
 
     stopConfig();
-    exf1Cmd(CMD_WRITE, ADDR_FOCUS, DATA_FOCUS_AF);
+    lib.exf1Cmd(CMD_WRITE, ADDR_FOCUS, DATA_FOCUS_AF);
     startConfig(FALSE, enablePreRecord);
 }
 
-void setupIso(WORD iso)
+void exf1api::setupIso(WORD iso)
 {
     stopConfig();
-    exf1Cmd(CMD_WRITE, ADDR_ISO, iso);
+    lib.exf1Cmd(CMD_WRITE, ADDR_ISO, iso);
     startConfig(stillImageEnabled, preRecordEnabled);
 }
 
-void setupAperture(WORD aperture)
+void exf1api::setupAperture(WORD aperture)
 {
     stopConfig();
-    exf1Cmd(CMD_WRITE, ADDR_APERTURE, aperture);
+    lib.exf1Cmd(CMD_WRITE, ADDR_APERTURE, aperture);
     startConfig(stillImageEnabled, preRecordEnabled);
 }
 
-void setupExposure(WORD exposure)
+void exf1api::setupExposure(WORD exposure)
 {
     stopConfig();
-    exf1Cmd(CMD_WRITE, ADDR_EXPOSURE, exposure);
+    lib.exf1Cmd(CMD_WRITE, ADDR_EXPOSURE, exposure);
     startConfig(stillImageEnabled, preRecordEnabled);
 }
 
-void setupFocus(WORD focus)
+void exf1api::setupFocus(WORD focus)
 {
     stopConfig();
-    exf1Cmd(CMD_WRITE, ADDR_FOCUS, focus);
+    lib.exf1Cmd(CMD_WRITE, ADDR_FOCUS, focus);
     startConfig(stillImageEnabled, preRecordEnabled);
 }
 
-void stopConfig()
+void exf1api::stopConfig()
 {
     if (stillImageEnabled)
-        exf1Cmd(CMD_STILL_STOP);
+        lib.exf1Cmd(CMD_STILL_STOP);
     else
-        exf1Cmd(CMD_MOVIE_STOP);
+        lib.exf1Cmd(CMD_MOVIE_STOP);
 }
 
-void startConfig(char enableStillImage, char enablePreRecord)
+void exf1api::startConfig(char enableStillImage, char enablePreRecord)
 {
     if (enableStillImage)
-        exf1Cmd(CMD_STILL_START);
+        lib.exf1Cmd(CMD_STILL_START);
     else
-        exf1Cmd(CMD_MOVIE_START, enablePreRecord);
+        lib.exf1Cmd(CMD_MOVIE_START, enablePreRecord);
 
     stillImageEnabled = enableStillImage;
     preRecordEnabled  = enablePreRecord; 
 }
 
-void movie(char *fileName, int delay)
+void exf1api::movie(char *fileName, int delay)
 {
-    exf1Cmd(CMD_MOVIE_PRESS);
+    lib.exf1Cmd(CMD_MOVIE_PRESS);
 
     if (delay >= 0)
         Sleep(1000 * delay);
     else
         printf("> Press enter to stop recording... "), getchar();
 
-    exf1Cmd(CMD_MOVIE_RELEASE, preRecordEnabled);
-    exf1Cmd(CMD_GET_MOVIE_HANDLES);
-    exf1Cmd(CMD_GET_OBJECT_INFO, objectHandles->data[0]);
-    exf1Cmd(CMD_GET_OBJECT, TO_FILE, objectHandles->data[0], fileName);
-    exf1Cmd(CMD_MOVIE_RESET, preRecordEnabled);
+    lib.exf1Cmd(CMD_MOVIE_RELEASE, preRecordEnabled);
+    lib.exf1Cmd(CMD_GET_MOVIE_HANDLES);
+    lib.exf1Cmd(CMD_GET_OBJECT_INFO, lib.objectHandles->data[0]);
+    lib.exf1Cmd(CMD_GET_OBJECT, TO_FILE, lib.objectHandles->data[0], fileName);
+    lib.exf1Cmd(CMD_MOVIE_RESET, preRecordEnabled);
 }
 
-void setupMonitor(char isPc) {
+void exf1api::setupMonitor(char isPc) {
     stopConfig();
     if (isPc) 
-        exf1Cmd(CMD_WRITE, ADDR_MONITOR, DATA_MONITOR_PC);
+        lib.exf1Cmd(CMD_WRITE, ADDR_MONITOR, DATA_MONITOR_PC);
     else
-        exf1Cmd(CMD_WRITE, ADDR_MONITOR, DATA_MONITOR_LCD);
-    startConfig(stillImageEnabled, preRecordEnabled);
-    //Sleep(2000);
+        lib.exf1Cmd(CMD_WRITE, ADDR_MONITOR, DATA_MONITOR_LCD);
+	startConfig(stillImageEnabled, preRecordEnabled);
+	//Sleep(2000); 
 }
 
-void exitCamera(void)
+void exf1api::exitCamera(void)
 {
     stopConfig();
-    exf1Cmd(CMD_WRITE, ADDR_FUNCTIONALITY, DATA_FUNC_BASIC);
-    exf1Cmd(CMD_CLOSE_SESSION);
-    while (usbRxEvent()>0);
+    lib.exf1Cmd(CMD_WRITE, ADDR_FUNCTIONALITY, DATA_FUNC_BASIC);
+    lib.exf1Cmd(CMD_CLOSE_SESSION);
+    while (lib.usbRxEvent()>0);
     printf("Exit done\n");
 }
 
-int grapPcMonitorFrame(char *jpgImage)
+int exf1api::grapPcMonitorFrame(char *jpgImage)
 {
     int jpgSize = -1;
-	if (frameNo > 0) 
-		exf1Cmd(CMD_GET_OBJECT, TO_MEM, 0x10000002, jpgImage, &jpgSize);
+	if (lib.frameNo > 0) 
+		lib.exf1Cmd(CMD_GET_OBJECT, TO_MEM, 0x10000002, jpgImage, &jpgSize);
 	else
-		usbRxEvent(); 
+		lib.usbRxEvent(); 
     return jpgSize;
 }
 
@@ -283,7 +286,7 @@ static const char * const cdjpeg_message_table[] = {
   NULL
 };
 
-void getCameraFrame(IplImage* frame)
+void exf1api::getCameraFrame(IplImage* frame)
 {
     char jpgImage[3*IMG_BUF_SIZE];
     int jpgSize;
@@ -335,9 +338,9 @@ void getCameraFrame(IplImage* frame)
         printf("JPG size is negative!\n"); 
 }
 
-void terminateCamera(void)
+void exf1api::terminateCamera(void)
 {
-  usb_release_interface(dev, 0);
-  usb_reset(dev);
-  usb_close(dev);
+  usb_release_interface(lib.dev, 0);
+  usb_reset(lib.dev);
+  usb_close(lib.dev);
 }

@@ -9,7 +9,6 @@
 #define	EXF1API_H
 
 #include "libexf1.h"
-
 #define CV_NO_BACKWARD_COMPATIBILITY
 #include <cv.h>
 #include <ctype.h>
@@ -18,47 +17,47 @@
 
 #define JMESSAGE(code,string) string ,
 
-typedef enum {
-    SHUTTER_NORMAL,
-    SHUTTER_CONTINOUS,
-    SHUTTER_PRERECORD,
-} SHUTTER_MODES;
+class exf1api {
 
-typedef enum {
-    MOVIE_STD,
-    MOVIE_HD,
-    MOVIE_HS,
-} MOVIE_MODES;
+	public:
+	enum 			SHUTTER_MODES {SHUTTER_NORMAL, SHUTTER_CONTINOUS, SHUTTER_PRERECORD};
+	enum			MOVIE_MODES {MOVIE_STD, MOVIE_HD, MOVIE_HS};
 
-void startConfig(char enableStillImage, char enablePreRecord);
-void stopConfig();
+	exf1api();
 
-int initCamera(void);
-void halfShutter(void);
-void shutter(char *fileName, char *thumbNail, int delay);
-void terminateCamera(void);
+	char halfShutterPressed;
+	char stillImageEnabled;
+	char preRecordEnabled;
+	char continousShutterEnabled; 
 
-void setupMovie(MOVIE_MODES movieMode, char enablePreRecord);
-void setupShutter(SHUTTER_MODES shutterMode, char enablePreRecord);
+	void startConfig(char enableStillImage, char enablePreRecord);
+	void stopConfig();
 
-void movie(char filename[], int delay);
-void setupMonitor(char isPc);
-void setupIso(WORD iso);
-void setupAperture(WORD aperture);
-void setupExposure(WORD exposure);
-void setupFocus(WORD focus);
+	int initCamera(void);
+	void halfShutter(void);
+	void shutter(char *fileName, char *thumbNail, int delay);
+	void terminateCamera(void);
 
-void zoom(char zoomIn, char continousZoom);
-void focus(char focusIn, char continousFocus);
+	void setupMovie(MOVIE_MODES movieMode, char enablePreRecord);
+	void setupShutter(SHUTTER_MODES shutterMode, char enablePreRecord);
 
-int grapPcMonitorFrame(char *jpgImage);
-void getCameraFrame(IplImage* frame); 
-void exitCamera(void);
+	void movie(char filename[], int delay);
+	void setupMonitor(char isPc);
+	void setupIso(WORD iso);
+	void setupAperture(WORD aperture);
+	void setupExposure(WORD exposure);
+	void setupFocus(WORD focus);
 
-extern char halfShutterPressed;
-extern char stillImageEnabled;
-extern char preRecordEnabled;
-extern char continousShutterEnabled;
+	void zoom(char zoomIn, char continousZoom);
+	void focus(char focusIn, char continousFocus);
+
+	int grapPcMonitorFrame(char *jpgImage);
+	void getCameraFrame(IplImage* frame); 
+	void exitCamera(void);
+
+	libexf1 lib; 
+
+	};
 
 #endif	/* LIBEXF1_H */
 

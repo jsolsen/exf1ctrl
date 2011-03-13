@@ -14,6 +14,7 @@ int main(int argc, char** argv)
 {
    char input[64], com, name[32], tname[32], jpgImage[3*IMG_BUF_SIZE];
    int arg, nargs, addr, val, i;
+   exf1api exf1; 
  
    printf(" \n");
    printf(" ********************************************************************\n");
@@ -92,7 +93,7 @@ int main(int argc, char** argv)
    printf("> Initializing camera... \n");
    fflush(stdout);
 		   
-   if (!initCamera())
+   if (!exf1.initCamera())
      return 0; 
    
    while (1)
@@ -108,34 +109,34 @@ int main(int argc, char** argv)
             printf("> Configuring aperture... \n");
             switch (arg) {
                case 1:
-                 setupAperture(DATA_APERTURE_F2_7);
+                 exf1.setupAperture(DATA_APERTURE_F2_7);
                  break;
                case 2:
-                 setupAperture(DATA_APERTURE_F3_0);
+                 exf1.setupAperture(DATA_APERTURE_F3_0);
                  break;
                case 3:
-                 setupAperture(DATA_APERTURE_F3_3);
+                 exf1.setupAperture(DATA_APERTURE_F3_3);
                  break;
                case 4:
-                 setupAperture(DATA_APERTURE_F3_8);
+                 exf1.setupAperture(DATA_APERTURE_F3_8);
                  break;
                case 5:
-                 setupAperture(DATA_APERTURE_F4_2);
+                 exf1.setupAperture(DATA_APERTURE_F4_2);
                  break;
                case 6:
-                 setupAperture(DATA_APERTURE_F4_7);
+                 exf1.setupAperture(DATA_APERTURE_F4_7);
                  break;
                case 7:
-                 setupAperture(DATA_APERTURE_F5_3);
+                 exf1.setupAperture(DATA_APERTURE_F5_3);
                  break;
                case 8:
-                 setupAperture(DATA_APERTURE_F6_0);
+                 exf1.setupAperture(DATA_APERTURE_F6_0);
                  break;
                case 9:
-                 setupAperture(DATA_APERTURE_F6_7);
+                 exf1.setupAperture(DATA_APERTURE_F6_7);
                  break;
                case 10:
-                 setupAperture(DATA_APERTURE_F7_5);
+                 exf1.setupAperture(DATA_APERTURE_F7_5);
                  break;
                default:
                  printf("> Unknown aperture setting. \n");
@@ -147,31 +148,31 @@ int main(int argc, char** argv)
             printf("> Configuring shutter mode / movie mode... \n");
             switch (arg) {
                 case 1:
-                    setupShutter(SHUTTER_NORMAL, FALSE);
+                    exf1.setupShutter(exf1.SHUTTER_NORMAL, FALSE);
                     break;
                 case 2:
-                    setupShutter(SHUTTER_CONTINOUS, FALSE);
+                    exf1.setupShutter(exf1.SHUTTER_CONTINOUS, FALSE);
                     break;
                 case 3:
-                    setupShutter(SHUTTER_NORMAL, TRUE);
+                    exf1.setupShutter(exf1.SHUTTER_NORMAL, TRUE);
                     break;
                 case 4:
-                    setupMovie(MOVIE_STD, FALSE);
+                    exf1.setupMovie(exf1.MOVIE_STD, FALSE);
                     break;
                 case 5:
-                    setupMovie(MOVIE_STD, TRUE);
+                    exf1.setupMovie(exf1.MOVIE_STD, TRUE);
                     break;
                 case 6:
-                    setupMovie(MOVIE_HD, FALSE);
+                    exf1.setupMovie(exf1.MOVIE_HD, FALSE);
                     break; 
                 case 7:
-                    setupMovie(MOVIE_HD, TRUE);
+                    exf1.setupMovie(exf1.MOVIE_HD, TRUE);
                     break; 
                 case 8:
-                    setupMovie(MOVIE_HS, FALSE);
+                    exf1.setupMovie(exf1.MOVIE_HS, FALSE);
                     break; 
                 case 9:
-                    setupMovie(MOVIE_HS, TRUE);
+                    exf1.setupMovie(exf1.MOVIE_HS, TRUE);
                     break;
                 default:
                     printf("> This mode is yet to be supported. \n");
@@ -183,16 +184,16 @@ int main(int argc, char** argv)
             printf("> Configuring exposure... \n");
             switch (arg) {
                case 1:
-                 setupExposure(DATA_EXPOSURE_M);
+                 exf1.setupExposure(DATA_EXPOSURE_M);
                  break;
                case 2:
-                 setupExposure(DATA_EXPOSURE_AUTO);
+                 exf1.setupExposure(DATA_EXPOSURE_AUTO);
                  break;
                case 3:
-                 setupExposure(DATA_EXPOSURE_A);
+                 exf1.setupExposure(DATA_EXPOSURE_A);
                  break;
                case 4:
-                 setupExposure(DATA_EXPOSURE_S);
+                 exf1.setupExposure(DATA_EXPOSURE_S);
                  break;
                default:
                  printf("> Unknown focus setting. \n");
@@ -204,16 +205,16 @@ int main(int argc, char** argv)
             printf("> Configuring focus... \n");
             switch (arg) {
                case 1:
-                 setupFocus(DATA_FOCUS_AF);
+                 exf1.setupFocus(DATA_FOCUS_AF);
                  break;
                case 2:
-                 setupFocus(DATA_FOCUS_MACRO);
+                 exf1.setupFocus(DATA_FOCUS_MACRO);
                  break;
                case 3:
-                 setupFocus(DATA_FOCUS_INFINITY);
+                 exf1.setupFocus(DATA_FOCUS_INFINITY);
                  break;
                case 4:
-                 setupFocus(DATA_FOCUS_MANUAL);
+                 exf1.setupFocus(DATA_FOCUS_MANUAL);
                  break;
                default:
                  printf("> Unknown exposure setting. \n");
@@ -223,7 +224,7 @@ int main(int argc, char** argv)
          case 'g':
              nargs = sscanf(input, "%c %d", &com, &arg);
              printf("> Configuring monitor... \n");
-             setupMonitor(TRUE);
+             exf1.setupMonitor(TRUE);
              
              if (nargs != 2) {
                  arg = 1; 
@@ -231,16 +232,16 @@ int main(int argc, char** argv)
              
              for (i=0; i<arg; i++) {
                  printf("> Grapping frame... \n");
-                 grapPcMonitorFrame(jpgImage);
+                 exf1.grapPcMonitorFrame(jpgImage);
              }
 
              printf("> Configuring monitor... \n");
-             setupMonitor(FALSE);
+             exf1.setupMonitor(FALSE);
              break;
 
          case 'h':
             printf("> Half press... \n");
-            halfShutter();
+            exf1.halfShutter();
             break; 
             
          case 'i':
@@ -248,22 +249,22 @@ int main(int argc, char** argv)
             printf("> Configuring ISO... \n");
             switch (arg) {
                case 1:
-                 setupIso(DATA_IS0_AUTO);
+                 exf1.setupIso(DATA_IS0_AUTO);
                  break;
                case 2:
-                 setupIso(DATA_IS0_100);
+                 exf1.setupIso(DATA_IS0_100);
                  break;
                case 3:
-                 setupIso(DATA_IS0_200);
+                 exf1.setupIso(DATA_IS0_200);
                  break;                 
                case 4:
-                 setupIso(DATA_IS0_400);
+                 exf1.setupIso(DATA_IS0_400);
                  break;
                case 5:
-                 setupIso(DATA_IS0_800);
+                 exf1.setupIso(DATA_IS0_800);
                  break;
                case 6:
-                 setupIso(DATA_IS0_1600);
+                 exf1.setupIso(DATA_IS0_1600);
                  break;
                default:
                  printf("> Unknown ISO setting. \n");
@@ -274,17 +275,17 @@ int main(int argc, char** argv)
             nargs = sscanf(input, "%c %d %s", &com, &arg, &name);
             printf("> Recording... \n");
             if (nargs == 3) 
-               movie(strcat(name, ".MOV"), arg);
+               exf1.movie(strcat(name, ".MOV"), arg);
             else if (nargs == 2) 
-               movie("CIMG001.MOV", arg);
+               exf1.movie("CIMG001.MOV", arg);
             else 
-               movie("CIMG001.MOV", -1);
+               exf1.movie("CIMG001.MOV", -1);
             break; 
             
          case 'q':
-            exitCamera();
+            exf1.exitCamera();
             printf("> Bye! \n");
-            terminateCamera();
+            exf1.terminateCamera();
             return 0;    
             
          case 's':
@@ -292,16 +293,16 @@ int main(int argc, char** argv)
             printf("> Taking picture... \n");
             switch (nargs) {
                 case 1: 
-                    shutter("CIMG001.jpg", "CIMG001_thumb.jpg", -1);
+                    exf1.shutter("CIMG001.jpg", "CIMG001_thumb.jpg", -1);
                     break; 
                 case 2: 
-                    shutter(strcat(name,".jpg"), strcat(name, "_thumb.jpg"), -1);     
+                    exf1.shutter(strcat(name,".jpg"), strcat(name, "_thumb.jpg"), -1);     
                     break; 
                 case 3:
-                    shutter(strcat(name,".jpg"), strcat(tname,".jpg"), -1);
+                    exf1.shutter(strcat(name,".jpg"), strcat(tname,".jpg"), -1);
                     break; 
                 case 4:
-                    shutter(strcat(name,".jpg"), strcat(tname,".jpg"), arg);
+                    exf1.shutter(strcat(name,".jpg"), strcat(tname,".jpg"), arg);
                     break; 
             }
             break;
@@ -312,23 +313,23 @@ int main(int argc, char** argv)
 
             switch (nargs) {
                 case 1:
-                    focus(TRUE, TRUE);
+                    exf1.focus(TRUE, TRUE);
                     break;
                 case 2:
                     if (strcmp(name, "in") == 0)
-                        focus(TRUE, TRUE);
+                        exf1.focus(TRUE, TRUE);
                     else if (strcmp(name, "out") == 0)
-                        focus(FALSE, TRUE);
+                        exf1.focus(FALSE, TRUE);
                     else
                         printf("> Unrecognized parameter: %s!\n", name);
                     break;
                 case 3:
                     if (strcmp(name, "in") == 0)
                         for (i=0; i<arg; i++)
-                            focus(TRUE, FALSE);
+                            exf1.focus(TRUE, FALSE);
                     else if (strcmp(name, "out") == 0)
                         for (i=0; i<arg; i++)
-                            focus(FALSE, FALSE);
+                            exf1.focus(FALSE, FALSE);
                     else
                         printf("> Unrecognized parameter: %s!\n", name);
                     break;
@@ -339,7 +340,7 @@ int main(int argc, char** argv)
             nargs = sscanf(input, "%c %x %x", &com, &addr, &val);
             if (nargs == 3) {
                printf("> Setting property 0x%X to 0x%X... \n", addr, val);
-               exf1Cmd(CMD_WRITE, addr, val);
+			   exf1.lib.exf1Cmd(CMD_WRITE, addr, val);
             }
             else
                printf("> Three arguments required... \n");
@@ -351,23 +352,23 @@ int main(int argc, char** argv)
 
             switch (nargs) {
                 case 1:
-                    zoom(TRUE, TRUE);
+                    exf1.zoom(TRUE, TRUE);
                     break;
                 case 2:
                     if (strcmp(name, "in") == 0)
-                        zoom(TRUE, TRUE);
+                        exf1.zoom(TRUE, TRUE);
                     else if (strcmp(name, "out") == 0)
-                        zoom(FALSE, TRUE);
+                        exf1.zoom(FALSE, TRUE);
                     else
                         printf("> Unrecognized parameter: %s!\n", name);
                     break;
                 case 3:
                     if (strcmp(name, "in") == 0)
                         for (i=0; i<arg; i++)
-                            zoom(TRUE, FALSE);
+                            exf1.zoom(TRUE, FALSE);
                     else if (strcmp(name, "out") == 0)
                         for (i=0; i<arg; i++)
-                            zoom(FALSE, FALSE);
+                            exf1.zoom(FALSE, FALSE);
                     else
                         printf("> Unrecognized parameter: %s!\n", name);
                     break;
