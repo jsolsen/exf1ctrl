@@ -233,7 +233,7 @@ void exf1api::stopConfig()
 void exf1api::startConfig(char enableStillImage, char enablePreRecord)
 {
     if (enableStillImage)
-        lib.exf1Cmd(CMD_STILL_START);
+        lib.exf1Cmd(CMD_STILL_START, 0);
     else
         lib.exf1Cmd(CMD_MOVIE_START, enablePreRecord);
 

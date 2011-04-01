@@ -212,8 +212,8 @@
     #define PACK( __Declaration__ ) __pragma( pack(push, 1) ) __Declaration__ __pragma( pack(pop) )
 #endif
 
-#define PROPERTY_FORM_NONE  	0x00
-#define PROPERTY_FORM_RANGE     0x01
+#define PROPERTY_FORM_NONE  0x00
+#define PROPERTY_FORM_RANGE 0x01
 #define PROPERTY_FORM_ENUM	0x02
 
 #define DATA_TYPE_CHAR		0x0002
@@ -378,7 +378,6 @@ class libexf1 {
 	usb_dev_handle *dev;
 	char tmp[BUF_SIZE];
 	char img[IMG_BUF_SIZE];
-	char interruptBuffer[24]; 
 	PTP_DEVICE_INFO deviceInfo;
 	PTP_DEVICE_PROPERTY deviceProperty;
 	PTP_OBJECT_INFO objectInfo;
