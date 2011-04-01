@@ -1,12 +1,13 @@
 //
-// ExF1Ctrl ver. 0.1. 
+// ExF1TimeLapse ver. 0.1. 
 //
-// This program can be used to interface the Casio EX-F1 over USB. 
+// This program illustrates how to build a simple timelapse application that controls the Casio EXF1. 
 // Firmware rev. 2.00 is required. 
 //
 // Written by Jens Skovgaard Olsen (info@feinschmeckerfoosball.com)
 // 
 
+#include <time.h>
 #include <stdio.h>
 #include "exf1api.h"
 

@@ -126,15 +126,19 @@ void exf1api::shutter(char *fileName, char *thumbNail, int delay)
             printf("> Downloading %s and %s...\n", fileName, thumbNail);
 
             lib.exf1Cmd(CMD_GET_OBJECT_INFO, lib.objectHandles->data[i]);
-            lib.exf1Cmd(CMD_GET_OBJECT,    TO_FILE, lib.objectHandles->data[i], fileName);
-            lib.exf1Cmd(CMD_GET_THUMBNAIL, TO_FILE, lib.objectHandles->data[i], thumbNail);
+			if (strlen(fileName) > 0)
+				lib.exf1Cmd(CMD_GET_OBJECT,    TO_FILE, lib.objectHandles->data[i], fileName);
+            if (strlen(thumbNail) > 0)
+				lib.exf1Cmd(CMD_GET_THUMBNAIL, TO_FILE, lib.objectHandles->data[i], thumbNail);
 
         }
     }
     else {
         lib.exf1Cmd(CMD_GET_OBJECT_INFO, lib.objectHandles->data[0]);
-        lib.exf1Cmd(CMD_GET_OBJECT,    TO_FILE, lib.objectHandles->data[0], fileName);
-        lib.exf1Cmd(CMD_GET_THUMBNAIL, TO_FILE, lib.objectHandles->data[0], thumbNail);
+        if (strlen(fileName) > 0)
+			lib.exf1Cmd(CMD_GET_OBJECT,    TO_FILE, lib.objectHandles->data[0], fileName);
+		if (strlen(thumbNail) > 0)
+			lib.exf1Cmd(CMD_GET_THUMBNAIL, TO_FILE, lib.objectHandles->data[0], thumbNail);
     }
     lib.exf1Cmd(CMD_STILL_RESET);
 }

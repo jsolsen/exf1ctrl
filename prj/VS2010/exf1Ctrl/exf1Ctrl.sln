@@ -13,6 +13,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "exf1Opencv", "..\exf1Opencv
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libexf1", "libexf1\libexf1.vcxproj", "{D3EE4D7C-A00F-44CE-A3C8-061A4587F925}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "exf1Timelapse", "..\exf1Timelapse\exf1Timelapse\exf1Timelapse.vcxproj", "{94D32A68-1FDB-4846-900A-1CDD853CB3BA}"
+	ProjectSection(ProjectDependencies) = postProject
+		{D3EE4D7C-A00F-44CE-A3C8-061A4587F925} = {D3EE4D7C-A00F-44CE-A3C8-061A4587F925}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -31,6 +36,10 @@ Global
 		{D3EE4D7C-A00F-44CE-A3C8-061A4587F925}.Debug|Win32.Build.0 = Debug|Win32
 		{D3EE4D7C-A00F-44CE-A3C8-061A4587F925}.Release|Win32.ActiveCfg = Release|Win32
 		{D3EE4D7C-A00F-44CE-A3C8-061A4587F925}.Release|Win32.Build.0 = Release|Win32
+		{94D32A68-1FDB-4846-900A-1CDD853CB3BA}.Debug|Win32.ActiveCfg = Debug|Win32
+		{94D32A68-1FDB-4846-900A-1CDD853CB3BA}.Debug|Win32.Build.0 = Debug|Win32
+		{94D32A68-1FDB-4846-900A-1CDD853CB3BA}.Release|Win32.ActiveCfg = Release|Win32
+		{94D32A68-1FDB-4846-900A-1CDD853CB3BA}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
