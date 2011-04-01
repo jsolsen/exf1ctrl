@@ -5,6 +5,7 @@
                    displayName="Header Files"
                    projectFiles="true"
                    kind="SOURCE_LOGICAL_FOLDER">
+      <itemPath>../../../src/exf1Opencv.h</itemPath>
       <itemPath>../../../../../../My Documents/Privat/exf1ctrl/src/exf1api.h</itemPath>
       <itemPath>C:/Documents and Settings/a0866631/My Documents/Privat/exf1ctrl/src/libexf1.h</itemPath>
     </logicalFolder>
@@ -77,9 +78,9 @@
         <itemPath>../../../src/jpeg-8b/jutils.c</itemPath>
         <itemPath>../../../src/jpeg-8b/jversion.h</itemPath>
       </logicalFolder>
-      <itemPath>../../../src/exf1Opencv.c</itemPath>
-      <itemPath>../../../../../../My Documents/Privat/exf1ctrl/src/exf1api.c</itemPath>
-      <itemPath>C:/Documents and Settings/a0866631/My Documents/Privat/exf1ctrl/src/libexf1.c</itemPath>
+      <itemPath>../../../src/exf1Opencv.cpp</itemPath>
+      <itemPath>../../../src/exf1api.cpp</itemPath>
+      <itemPath>../../../src/libexf1.cpp</itemPath>
     </logicalFolder>
     <logicalFolder name="TestFiles"
                    displayName="Test Files"

@@ -18,9 +18,66 @@
                    displayName="Source Files"
                    projectFiles="true"
                    kind="SOURCE_LOGICAL_FOLDER">
-      <itemPath>../../../src/exf1api.c</itemPath>
-      <itemPath>../../../src/exf1ctrl.c</itemPath>
-      <itemPath>../../../src/libexf1.c</itemPath>
+      <logicalFolder name="jpeg-8b" displayName="jpeg-8b" projectFiles="true">
+        <itemPath>../../../src/jpeg-8b/jaricom.c</itemPath>
+        <itemPath>../../../src/jpeg-8b/jcapimin.c</itemPath>
+        <itemPath>../../../src/jpeg-8b/jcapistd.c</itemPath>
+        <itemPath>../../../src/jpeg-8b/jcarith.c</itemPath>
+        <itemPath>../../../src/jpeg-8b/jccoefct.c</itemPath>
+        <itemPath>../../../src/jpeg-8b/jccolor.c</itemPath>
+        <itemPath>../../../src/jpeg-8b/jcdctmgr.c</itemPath>
+        <itemPath>../../../src/jpeg-8b/jchuff.c</itemPath>
+        <itemPath>../../../src/jpeg-8b/jcinit.c</itemPath>
+        <itemPath>../../../src/jpeg-8b/jcmainct.c</itemPath>
+        <itemPath>../../../src/jpeg-8b/jcmarker.c</itemPath>
+        <itemPath>../../../src/jpeg-8b/jcmaster.c</itemPath>
+        <itemPath>../../../src/jpeg-8b/jcomapi.c</itemPath>
+        <itemPath>../../../src/jpeg-8b/jconfig.h</itemPath>
+        <itemPath>../../../src/jpeg-8b/jcparam.c</itemPath>
+        <itemPath>../../../src/jpeg-8b/jcprepct.c</itemPath>
+        <itemPath>../../../src/jpeg-8b/jcsample.c</itemPath>
+        <itemPath>../../../src/jpeg-8b/jctrans.c</itemPath>
+        <itemPath>../../../src/jpeg-8b/jdapimin.c</itemPath>
+        <itemPath>../../../src/jpeg-8b/jdapistd.c</itemPath>
+        <itemPath>../../../src/jpeg-8b/jdarith.c</itemPath>
+        <itemPath>../../../src/jpeg-8b/jdatadst.c</itemPath>
+        <itemPath>../../../src/jpeg-8b/jdatasrc.c</itemPath>
+        <itemPath>../../../src/jpeg-8b/jdcoefct.c</itemPath>
+        <itemPath>../../../src/jpeg-8b/jdcolor.c</itemPath>
+        <itemPath>../../../src/jpeg-8b/jdct.h</itemPath>
+        <itemPath>../../../src/jpeg-8b/jddctmgr.c</itemPath>
+        <itemPath>../../../src/jpeg-8b/jdhuff.c</itemPath>
+        <itemPath>../../../src/jpeg-8b/jdinput.c</itemPath>
+        <itemPath>../../../src/jpeg-8b/jdmainct.c</itemPath>
+        <itemPath>../../../src/jpeg-8b/jdmarker.c</itemPath>
+        <itemPath>../../../src/jpeg-8b/jdmaster.c</itemPath>
+        <itemPath>../../../src/jpeg-8b/jdmerge.c</itemPath>
+        <itemPath>../../../src/jpeg-8b/jdpostct.c</itemPath>
+        <itemPath>../../../src/jpeg-8b/jdsample.c</itemPath>
+        <itemPath>../../../src/jpeg-8b/jdtrans.c</itemPath>
+        <itemPath>../../../src/jpeg-8b/jerror.c</itemPath>
+        <itemPath>../../../src/jpeg-8b/jerror.h</itemPath>
+        <itemPath>../../../src/jpeg-8b/jfdctflt.c</itemPath>
+        <itemPath>../../../src/jpeg-8b/jfdctfst.c</itemPath>
+        <itemPath>../../../src/jpeg-8b/jfdctint.c</itemPath>
+        <itemPath>../../../src/jpeg-8b/jidctflt.c</itemPath>
+        <itemPath>../../../src/jpeg-8b/jidctfst.c</itemPath>
+        <itemPath>../../../src/jpeg-8b/jidctint.c</itemPath>
+        <itemPath>../../../src/jpeg-8b/jinclude.h</itemPath>
+        <itemPath>../../../src/jpeg-8b/jmemansi.c</itemPath>
+        <itemPath>../../../src/jpeg-8b/jmemmgr.c</itemPath>
+        <itemPath>../../../src/jpeg-8b/jmemsys.h</itemPath>
+        <itemPath>../../../src/jpeg-8b/jmorecfg.h</itemPath>
+        <itemPath>../../../src/jpeg-8b/jpegint.h</itemPath>
+        <itemPath>../../../src/jpeg-8b/jpeglib.h</itemPath>
+        <itemPath>../../../src/jpeg-8b/jquant1.c</itemPath>
+        <itemPath>../../../src/jpeg-8b/jquant2.c</itemPath>
+        <itemPath>../../../src/jpeg-8b/jutils.c</itemPath>
+        <itemPath>../../../src/jpeg-8b/jversion.h</itemPath>
+      </logicalFolder>
+      <itemPath>C:/Documents and Settings/a0866631/My Documents/Privat/exf1ctrl/src/exf1api.cpp</itemPath>
+      <itemPath>C:/Documents and Settings/a0866631/My Documents/Privat/exf1ctrl/src/exf1ctrl.cpp</itemPath>
+      <itemPath>C:/Documents and Settings/a0866631/My Documents/Privat/exf1ctrl/src/libexf1.cpp</itemPath>
     </logicalFolder>
     <logicalFolder name="TestFiles"
                    displayName="Test Files"
@@ -34,6 +91,9 @@
       <itemPath>Makefile</itemPath>
     </logicalFolder>
   </logicalFolder>
+  <sourceRootList>
+    <Elem>../../../src/jpeg-8b</Elem>
+  </sourceRootList>
   <projectmakefile>Makefile</projectmakefile>
   <confs>
     <conf name="Debug" type="1">
@@ -43,8 +103,16 @@
         <platform>3</platform>
       </toolsSet>
       <compileType>
+        <ccTool>
+          <incDir>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
         <linkerTool>
           <output>../../../bin/exf1Ctrl</output>
+          <linkerAddLib>
+            <pElem>../../../lib</pElem>
+          </linkerAddLib>
           <linkerLibItems>
             <linkerLibLibItem>usb</linkerLibLibItem>
           </linkerLibItems>
@@ -63,6 +131,9 @@
         </cTool>
         <ccTool>
           <developmentMode>5</developmentMode>
+          <incDir>
+            <pElem>../../../include</pElem>
+          </incDir>
         </ccTool>
         <fortranCompilerTool>
           <developmentMode>5</developmentMode>
@@ -72,6 +143,9 @@
         </asmTool>
         <linkerTool>
           <output>../../../bin/exf1Ctrl</output>
+          <linkerAddLib>
+            <pElem>../../../lib</pElem>
+          </linkerAddLib>
           <linkerLibItems>
             <linkerLibLibItem>usb</linkerLibLibItem>
           </linkerLibItems>

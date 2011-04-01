@@ -62,7 +62,6 @@ OBJECTFILES= \
 	${OBJECTDIR}/_ext/873296555/jcinit.o \
 	${OBJECTDIR}/_ext/873296555/jdpostct.o \
 	${OBJECTDIR}/_ext/873296555/jdmerge.o \
-	${OBJECTDIR}/_ext/1982019137/libexf1.o \
 	${OBJECTDIR}/_ext/873296555/jcomapi.o \
 	${OBJECTDIR}/_ext/873296555/jchuff.o \
 	${OBJECTDIR}/_ext/873296555/jfdctflt.o \
@@ -81,7 +80,8 @@ OBJECTFILES= \
 	${OBJECTDIR}/_ext/873296555/jerror.o \
 	${OBJECTDIR}/_ext/873296555/jidctfst.o \
 	${OBJECTDIR}/_ext/873296555/jcdctmgr.o \
-	${OBJECTDIR}/_ext/1376172032/exf1api.o
+	${OBJECTDIR}/_ext/1386528437/libexf1.o \
+	${OBJECTDIR}/_ext/1386528437/exf1api.o
 
 
 # C Compiler Flags
@@ -106,12 +106,12 @@ LDLIBSOPTIONS=-L/cygdrive/C/OpenCV2.0/lib -lcv200.dll -lcvaux200.dll -lcxcore200
 
 ../../../bin/exf1Opencv.exe: ${OBJECTFILES}
 	${MKDIR} -p ../../../bin
-	${LINK.c} -o ../../../bin/exf1Opencv ${OBJECTFILES} ${LDLIBSOPTIONS} 
+	${LINK.cc} -o ../../../bin/exf1Opencv ${OBJECTFILES} ${LDLIBSOPTIONS} 
 
-${OBJECTDIR}/_ext/1386528437/exf1Opencv.o: ../../../src/exf1Opencv.c 
+${OBJECTDIR}/_ext/1386528437/exf1Opencv.o: ../../../src/exf1Opencv.cpp 
 	${MKDIR} -p ${OBJECTDIR}/_ext/1386528437
 	${RM} $@.d
-	$(COMPILE.c) -g -O -I/cygdrive/C/OpenCV2.0/include/opencv -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/1386528437/exf1Opencv.o ../../../src/exf1Opencv.c
+	$(COMPILE.cc) -g -O -I/cygdrive/C/OpenCV2.0/include/opencv -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/1386528437/exf1Opencv.o ../../../src/exf1Opencv.cpp
 
 ${OBJECTDIR}/_ext/873296555/jidctint.o: ../../../src/jpeg-8b/jidctint.c 
 	${MKDIR} -p ${OBJECTDIR}/_ext/873296555
@@ -253,11 +253,6 @@ ${OBJECTDIR}/_ext/873296555/jdmerge.o: ../../../src/jpeg-8b/jdmerge.c
 	${RM} $@.d
 	$(COMPILE.c) -g -O -I/cygdrive/C/OpenCV2.0/include/opencv -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/873296555/jdmerge.o ../../../src/jpeg-8b/jdmerge.c
 
-${OBJECTDIR}/_ext/1982019137/libexf1.o: /cygdrive/C/Documents\ and\ Settings/a0866631/My\ Documents/Privat/exf1ctrl/src/libexf1.c 
-	${MKDIR} -p ${OBJECTDIR}/_ext/1982019137
-	${RM} $@.d
-	$(COMPILE.c) -g -O -I/cygdrive/C/OpenCV2.0/include/opencv -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/1982019137/libexf1.o /cygdrive/C/Documents\ and\ Settings/a0866631/My\ Documents/Privat/exf1ctrl/src/libexf1.c
-
 ${OBJECTDIR}/_ext/873296555/jcomapi.o: ../../../src/jpeg-8b/jcomapi.c 
 	${MKDIR} -p ${OBJECTDIR}/_ext/873296555
 	${RM} $@.d
@@ -348,10 +343,15 @@ ${OBJECTDIR}/_ext/873296555/jcdctmgr.o: ../../../src/jpeg-8b/jcdctmgr.c
 	${RM} $@.d
 	$(COMPILE.c) -g -O -I/cygdrive/C/OpenCV2.0/include/opencv -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/873296555/jcdctmgr.o ../../../src/jpeg-8b/jcdctmgr.c
 
-${OBJECTDIR}/_ext/1376172032/exf1api.o: ../../../../../../My\ Documents/Privat/exf1ctrl/src/exf1api.c 
-	${MKDIR} -p ${OBJECTDIR}/_ext/1376172032
+${OBJECTDIR}/_ext/1386528437/libexf1.o: ../../../src/libexf1.cpp 
+	${MKDIR} -p ${OBJECTDIR}/_ext/1386528437
 	${RM} $@.d
-	$(COMPILE.c) -g -O -I/cygdrive/C/OpenCV2.0/include/opencv -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/1376172032/exf1api.o ../../../../../../My\ Documents/Privat/exf1ctrl/src/exf1api.c
+	$(COMPILE.cc) -g -O -I/cygdrive/C/OpenCV2.0/include/opencv -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/1386528437/libexf1.o ../../../src/libexf1.cpp
+
+${OBJECTDIR}/_ext/1386528437/exf1api.o: ../../../src/exf1api.cpp 
+	${MKDIR} -p ${OBJECTDIR}/_ext/1386528437
+	${RM} $@.d
+	$(COMPILE.cc) -g -O -I/cygdrive/C/OpenCV2.0/include/opencv -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/1386528437/exf1api.o ../../../src/exf1api.cpp
 
 # Subprojects
 .build-subprojects:
