@@ -22,6 +22,7 @@ class exf1api {
 	public:
 	enum 			SHUTTER_MODES {SHUTTER_NORMAL, SHUTTER_CONTINOUS, SHUTTER_PRERECORD};
 	enum			MOVIE_MODES {MOVIE_STD, MOVIE_HD, MOVIE_HS};
+	enum		    EV {M2_0, M1_7, M1_3, M1_0, M0_7, M0_3, P0_0, P0_3, P0_7, P1_0, P1_3, P1_7, P2_0};
 
 	exf1api();
 
@@ -46,6 +47,7 @@ class exf1api {
 	void setupIso(WORD iso);
 	void setupAperture(WORD aperture);
 	void setupExposure(WORD exposure);
+	void setupExposureValue(EV exposureValue);
 	void setupFocus(WORD focus);
 
 	void zoom(char zoomIn, char continousZoom);

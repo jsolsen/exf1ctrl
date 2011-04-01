@@ -215,6 +215,14 @@ void exf1api::setupExposure(WORD exposure)
     startConfig(stillImageEnabled, preRecordEnabled);
 }
 
+void exf1api::setupExposureValue(EV exposureValue)
+{
+    stopConfig();
+    lib.exf1Cmd(CMD_WRITE, ADDR_EV, (WORD) exposureValue);
+    startConfig(stillImageEnabled, preRecordEnabled);
+}
+
+
 void exf1api::setupFocus(WORD focus)
 {
     stopConfig();

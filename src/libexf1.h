@@ -15,10 +15,6 @@
 #define TRUE      1
 #define FALSE     0 
 
-#define NO_READS  0
-#define ONE_READ  1
-#define TWO_READS 2
-
 #define MY_VID 0x07CF
 #define MY_PID 0x1023
 

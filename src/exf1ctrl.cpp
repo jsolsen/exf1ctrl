@@ -196,7 +196,7 @@ int main(int argc, char** argv)
                  exf1.setupExposure(DATA_EXPOSURE_S);
                  break;
                default:
-                 printf("> Unknown focus setting. \n");
+                 printf("> Unknown exposure setting. \n");
             }
             break; 
 
@@ -217,7 +217,7 @@ int main(int argc, char** argv)
                  exf1.setupFocus(DATA_FOCUS_MANUAL);
                  break;
                default:
-                 printf("> Unknown exposure setting. \n");
+                 printf("> Unknown focus setting. \n");
             }
             break;
 
