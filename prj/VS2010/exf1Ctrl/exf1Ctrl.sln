@@ -18,6 +18,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "exf1Timelapse", "..\exf1Tim
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libexf1", "..\libexf1\libexf1\libexf1.vcxproj", "{EFC7DC09-CACD-47E3-9DD0-613C12CA1B15}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "exf1Hdr", "..\exf1Hdr\exf1Hdr\exf1Hdr.vcxproj", "{456CC630-F9AA-4703-A223-28D99EBF496E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -40,6 +42,10 @@ Global
 		{EFC7DC09-CACD-47E3-9DD0-613C12CA1B15}.Debug|Win32.Build.0 = Debug|Win32
 		{EFC7DC09-CACD-47E3-9DD0-613C12CA1B15}.Release|Win32.ActiveCfg = Release|Win32
 		{EFC7DC09-CACD-47E3-9DD0-613C12CA1B15}.Release|Win32.Build.0 = Release|Win32
+		{456CC630-F9AA-4703-A223-28D99EBF496E}.Debug|Win32.ActiveCfg = Debug|Win32
+		{456CC630-F9AA-4703-A223-28D99EBF496E}.Debug|Win32.Build.0 = Debug|Win32
+		{456CC630-F9AA-4703-A223-28D99EBF496E}.Release|Win32.ActiveCfg = Release|Win32
+		{456CC630-F9AA-4703-A223-28D99EBF496E}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

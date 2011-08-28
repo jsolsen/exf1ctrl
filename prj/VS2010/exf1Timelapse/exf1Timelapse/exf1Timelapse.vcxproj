@@ -11,9 +11,6 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\..\src\exf1Timelapse.h" />
-  </ItemGroup>
-  <ItemGroup>
     <ClCompile Include="..\..\..\..\src\exf1Timelapse.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
