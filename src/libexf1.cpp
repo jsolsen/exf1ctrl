@@ -96,6 +96,7 @@ void libexf1::exf1Cmd(WORD cmd, ...)
 
         case CMD_STILL_RESET:
         case CMD_MOVIE_PRESS:
+		case CMD_30_300_PRESS:
         case CMD_CLOSE_SESSION:
         case CMD_HALF_RELEASE:
         case CMD_STILL_STOP:
@@ -422,7 +423,7 @@ int libexf1::usbRxEvent(){
     memset(tmp, 0, 16);
     rx = (PTP_CONTAINER *) tmp;
 
-	bytesRead = usb_interrupt_read(dev, EP_INT, tmp, 24, 10);
+	bytesRead = usb_interrupt_read(dev, EP_INT, tmp, 24, 100);
 
 	/*
     // Attempt read.
@@ -457,8 +458,8 @@ int libexf1::usbRxEvent(){
                 case EVT_ZOOM_CHANGED:
                     zoomSetting = rx->payload.dword_params.param1;
                     break;
-                default:
-                    printf("Unhandled event code: 0x%04x\n", rx->code);
+                /*default:
+                    printf("Unhandled event code: 0x%04x\n", rx->code);*/
             }
         }
         //else
@@ -924,6 +925,7 @@ void libexf1::printObjectInfo() {
 
 int libexf1::usbInit()
 {
+	//usb_set_debug(3); 
     usb_init();
     usb_find_busses();
     usb_find_devices();
@@ -944,7 +946,7 @@ int libexf1::usbInit()
       usb_close(dev);
       return 0;
     }
-
+	
     // DeviceReset.
     if (usb_control_msg(dev, 0x21, 0x66, 0, 0, NULL, 0, TIME_OUT) < 0)
       printf("error: cmd write 1 failed\n");
@@ -952,7 +954,7 @@ int libexf1::usbInit()
     usb_resetep(dev, EP_IN);
     usb_resetep(dev, EP_OUT);
 
-    usbRxEvent();
+
 
     if (usb_clear_halt(dev, EP_IN) < 0)
       printf("error: halt clear failed.\n");
@@ -960,12 +962,14 @@ int libexf1::usbInit()
     if (usb_clear_halt(dev, EP_OUT) < 0)
       printf("error: halt clear failed.\n");
 
+
+	
     // GetDeviceStatus.
     if (usb_control_msg(dev, 0xA1, 0x67, 0x00, 0x00, &tmp[0], 4, TIME_OUT) < 0)
       printf("error: cmd write 2 failed\n");
 
     //printf("DeviceStatus: 0x%04x...\n", GET_DWORD(tmp));
-
+	usbRxEvent();
     return 1; 
 }
 

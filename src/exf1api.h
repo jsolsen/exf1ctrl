@@ -44,6 +44,7 @@ class exf1api {
 
 	void movie(char filename[], int delay);
 	void setupMonitor(char isPc);
+	void setupFrameRate(WORD fps);
 	void setupIso(WORD iso);
 	void setupAperture(WORD aperture);
 	void setupExposure(WORD exposure);

@@ -103,7 +103,11 @@ void exf1api::shutter(char *fileName, char *thumbNail, int delay)
     if (continousShutterEnabled) {
         lib.exf1Cmd(CMD_CS_PRESS);
         if (delay >= 0)
+#ifdef WIN32
             Sleep(1000 * delay);
+#else
+			usleep(1000 * delay);
+#endif
         else
             printf("> Press enter to stop recording... "), getchar();
         lib.exf1Cmd(CMD_CS_RELEASE, preRecordEnabled);
@@ -194,6 +198,13 @@ void exf1api::setupMovie(MOVIE_MODES movieMode, char enablePreRecord)
     startConfig(FALSE, enablePreRecord);
 }
 
+void exf1api::setupFrameRate(WORD fps)
+{
+    stopConfig();
+    lib.exf1Cmd(CMD_WRITE, ADDR_HS_SETTING, fps);
+    startConfig(stillImageEnabled, preRecordEnabled);
+}
+
 void exf1api::setupIso(WORD iso)
 {
     stopConfig();
@@ -251,13 +262,30 @@ void exf1api::startConfig(char enableStillImage, char enablePreRecord)
 
 void exf1api::movie(char *fileName, int delay)
 {
+	char c;
+
     lib.exf1Cmd(CMD_MOVIE_PRESS);
 
     if (delay >= 0)
-        Sleep(1000 * delay);
+#ifdef WIN32
+		Sleep(1000 * delay);
+#else
+		usleep(1000 * delay);
+#endif
     else
-        printf("> Press enter to stop recording... "), getchar();
-
+	{
+        printf("> Press 's' enter to stop recording... \n");
+		printf("> Press 't' enter to toggle between 30/300FPS when in HS mode... \n");
+		printf("> "); 
+		do {
+			c = getchar();	
+			if (c == 't') {
+				lib.exf1Cmd(CMD_30_300_PRESS);
+				printf("> ");
+			}
+		} while (c != 's');  
+		rewind(stdin); 
+	}
     lib.exf1Cmd(CMD_MOVIE_RELEASE, preRecordEnabled);
     lib.exf1Cmd(CMD_GET_MOVIE_HANDLES);
     lib.exf1Cmd(CMD_GET_OBJECT_INFO, lib.objectHandles->data[0]);

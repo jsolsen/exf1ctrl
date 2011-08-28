@@ -42,7 +42,7 @@ int main(int argc, char** argv)
    printf("          9: F6.7.\n");
    printf("         10: F7.5.\n");
    printf(" \n");
-   printf(" Hint: c [x] sets mode / movie mode (x = 1-9).\n");
+   printf(" Hint: c [x [y]] sets mode / movie mode (x = 1-9).\n");
    printf("          1: Single shot (default).\n");
    printf("          2: Continuous shutter.\n");
    printf("          3: Prerecord still image.\n");
@@ -52,6 +52,11 @@ int main(int argc, char** argv)
    printf("          7: Prerecord movie (HD).\n");
    printf("          8: Movie (HS).\n");
    printf("          9: Prerecord movie (HS).\n");
+   printf("       In high speed mode y determines the framerate:\n");
+   printf("          1: 300FPS.\n");
+   printf("          2: 600FPS.\n");
+   printf("          3: 1200FPS.\n");
+   printf("          4: 30-300FPS.\n");
    printf("\n");
    printf(" Hint: e [x] sets exposure (x = 1-4).\n");
    printf("          1: M.\n");
@@ -144,7 +149,7 @@ int main(int argc, char** argv)
             break;
 
          case 'c': 
-            nargs = sscanf(input, "%c %d", &com, &arg);
+            nargs = sscanf(input, "%c %d %d", &com, &arg, &val);
             printf("> Configuring shutter mode / movie mode... \n");
             switch (arg) {
                 case 1:
@@ -177,6 +182,25 @@ int main(int argc, char** argv)
                 default:
                     printf("> This mode is yet to be supported. \n");
             }
+			if (nargs > 2 && (arg == 8 || arg == 9)) 
+			{
+				switch (val) {
+				case 1: 
+					exf1.setupFrameRate(DATA_FPS_300);
+					break;
+				case 2: 
+					exf1.setupFrameRate(DATA_FPS_600);
+					break; 
+				case 3: 
+					exf1.setupFrameRate(DATA_FPS_1200);
+					break; 
+				case 4: 
+					exf1.setupFrameRate(DATA_FPS_30_300);
+					break; 
+				default: 
+					printf("> Unsupported frame rate setting.\n"); 
+				} 
+			}
             break; 
 
           case 'e':
