@@ -119,10 +119,13 @@ void libexf1::exf1Cmd(WORD cmd, ...)
         case CMD_ZOOM:
         case CMD_FOCUS:
             dwordVal = va_arg(ap, int);
-            usbTx(cmd, TYPE_CMD, 2*sizeof(dwordVal), (DWORD) dwordVal, 0);
-            //while (usbRxEvent() > 0);
-            usbRx();
-            //while (usbRxEvent() > 0);
+			do {
+				usbTx(cmd, TYPE_CMD, 2*sizeof(dwordVal), (DWORD) dwordVal, 0);
+				//while (usbRxEvent() > 0);
+				usbRx();
+				//while (usbRxEvent() > 0);
+				//if (rx->code == CMD_DEVICE_BUSY) printf("Retrying...\n");
+			} while (rx->code == CMD_DEVICE_BUSY);
             break;
 
         case CMD_OPEN_SESSION:
@@ -171,7 +174,7 @@ void libexf1::exf1Cmd(WORD cmd, ...)
 					do {
 						usbTx(cmd, TYPE_CMD, sizeof(DWORD), dwordVal, 0);
 						usbRxToMem(pString, pInt);
-                    } while (rx->code == 0x2019);
+                    } while (rx->code == CMD_DEVICE_BUSY);
 					usbRx();
                     break;
             }
@@ -282,7 +285,9 @@ int libexf1::usbRx() {
                 }
                 break;
             case TYPE_RESPONSE:
-                if (rx->code != CMD_OK) printf("Ack (usbRx) = %02X.\n", rx->code);
+				//if (rx->code == CMD_DEVICE_BUSY) printf("Device busy...\n");
+                //else 
+				if (rx->code != CMD_OK && rx->code != CMD_DEVICE_BUSY) printf("Ack (usbRx) = %02X.\n", rx->code);
                 break;
                 /*
             case TYPE_EVENT:

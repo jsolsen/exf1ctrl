@@ -47,6 +47,7 @@
 #define CMD_READ            0x1015
 #define CMD_WRITE           0x1016
 #define CMD_OK              0x2001
+#define CMD_DEVICE_BUSY     0x2019
 
 #define CMD_STILL_START     0x9001
 #define CMD_STILL_STOP      0x9002
