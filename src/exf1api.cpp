@@ -10,7 +10,7 @@ exf1api::exf1api()
 
 int exf1api::initCamera(void)
 {
-    if (lib.usbInit() == 0)
+    if (lib.usbStart() == 0)
         exit(0);
 
     // Print out device info.
@@ -95,7 +95,7 @@ void exf1api::halfShutter(void)
     }
 }
 
-void exf1api::shutter(char *fileName, char *thumbNail, int delay)
+void exf1api::shutter(const char *fileName, const char *thumbNail, int delay)
 {
     DWORD i;
     //char newFileName[255], newThumbNail[255];
@@ -260,9 +260,9 @@ void exf1api::startConfig(char enableStillImage, char enablePreRecord)
     preRecordEnabled  = enablePreRecord; 
 }
 
-void exf1api::movie(char *fileName, int delay)
+void exf1api::movie(const char *fileName, int delay)
 {
-	char c;
+    char c;
 
     lib.exf1Cmd(CMD_MOVIE_PRESS);
 
@@ -312,7 +312,7 @@ void exf1api::exitCamera(void)
     printf("Exit done\n");
 }
 
-int exf1api::grapPcMonitorFrame(char *jpgImage)
+int exf1api::grapPcMonitorFrame(const char *jpgImage)
 {
     int jpgSize = -1;
 	if (lib.frameNo > 0) 
@@ -380,7 +380,5 @@ void exf1api::getCameraFrame(IplImage* frame)
 
 void exf1api::terminateCamera(void)
 {
-  usb_release_interface(lib.dev, 0);
-  usb_reset(lib.dev);
-  usb_close(lib.dev);
+	lib.usbStop();
 }

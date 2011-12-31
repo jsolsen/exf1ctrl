@@ -36,13 +36,13 @@ class exf1api {
 
 	int initCamera(void);
 	void halfShutter(void);
-	void shutter(char *fileName, char *thumbNail, int delay);
+	void shutter(const char *fileName, const char *thumbNail, int delay);
 	void terminateCamera(void);
 
 	void setupMovie(MOVIE_MODES movieMode, char enablePreRecord);
 	void setupShutter(SHUTTER_MODES shutterMode, char enablePreRecord);
 
-	void movie(char filename[], int delay);
+	void movie(const char *filename, int delay);
 	void setupMonitor(char isPc);
 	void setupFrameRate(WORD fps);
 	void setupIso(WORD iso);
@@ -54,7 +54,7 @@ class exf1api {
 	void zoom(char zoomIn, char continousZoom);
 	void focus(char focusIn, char continousFocus);
 
-	int grapPcMonitorFrame(char *jpgImage);
+	int grapPcMonitorFrame(const char *jpgImage);
 	void getCameraFrame(IplImage* frame); 
 	void exitCamera(void);
 

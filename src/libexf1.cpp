@@ -2,11 +2,11 @@
 
 
 libexf1::libexf1() {
-	dev = NULL;
-	USB_CMD_ID = 0xFFFFFFFF;
-	frameNo = 0;
-	objectHandles = NULL; 
-	objectInfo.fileName = NULL;
+    dev = NULL;
+    USB_CMD_ID = 0xFFFFFFFF;
+    frameNo = 0;
+    objectHandles = NULL; 
+    objectInfo.fileName = NULL;
     objectInfo.captureDate = NULL;
     objectInfo.modificationDate = NULL;
     objectInfo.keyWords = NULL;
@@ -20,13 +20,13 @@ libexf1::libexf1() {
     deviceInfo.model = NULL;
     deviceInfo.deviceVersion = NULL;
     deviceInfo.serialNumber = NULL;
-	deviceProperty.defaultValue = NULL;
+    deviceProperty.defaultValue = NULL;
     deviceProperty.currentValue = NULL; 
-	deviceProperty.form.rangeForm.maximumValue = NULL;
+    deviceProperty.form.rangeForm.maximumValue = NULL;
     deviceProperty.form.rangeForm.minimumValue = NULL;
     deviceProperty.form.rangeForm.stepSize = NULL;
-	deviceProperty.form.enumForm.supportedValue = NULL; 
-	deviceProperty.form.enumForm.numberOfValues = 0; 
+    deviceProperty.form.enumForm.supportedValue = NULL; 
+    deviceProperty.form.enumForm.numberOfValues = 0; 
 }
 
 void libexf1::exf1Cmd(WORD cmd, ...)
@@ -190,7 +190,7 @@ void libexf1::exf1Cmd(WORD cmd, ...)
 void libexf1::usbTx(WORD cmd, WORD cmdType, int nCmdParameterBytes, DWORD cmdParameter1, DWORD cmdParameter2) {
 
     PTP_CONTAINER tx;
-    int packetSize = 12 + nCmdParameterBytes;
+    int packetSize = 12 + nCmdParameterBytes, bytesTransfered = 0;
 
     tx.length   = packetSize;
     tx.type     = cmdType;
@@ -219,7 +219,9 @@ void libexf1::usbTx(WORD cmd, WORD cmdType, int nCmdParameterBytes, DWORD cmdPar
     //while (usbRxEvent()>0);
 	usbRxEvent();
 	//printf("Grabbing frame: %d\n", frameNo);
-    if (usb_bulk_write(dev, EP_OUT, (char *) &tx, packetSize, 100) != packetSize)
+        
+	usbBulkWrite(&tx, packetSize, &bytesTransfered);
+    if (bytesTransfered != packetSize)    
         printf("Error: Bulk write failed for this command: %02X!\n", 0xFFFF & cmd);
 
     USB_CMD_ID++;
@@ -231,24 +233,19 @@ int libexf1::usbRx() {
 
     // Clear old PTP header.
     memset(tmp, 0, 12);
-
     do {
-        //while (usbRxEvent()>0);
 		usbRxEvent();
-        bytesRead = usb_bulk_read(dev, EP_IN, tmp, BUF_SIZE, 100);
-        //printf("bytesRead (usbRx): %d\n", bytesRead);
-    } while (bytesRead == -116);
+        usbBulkRead(tmp, BUF_SIZE, &bytesRead);
+    } 
+#if LIBUSB_VER == 1
+	while (bytesRead == 0);
+#else
+	while (bytesRead == -116 || bytesRead == -110);
+#endif 
 
     rx = (PTP_CONTAINER *) tmp;
     
     if (bytesRead > 0) {
-/*
-        printf("usbRx: 0x%04X 0x%04X\n", rx->code, rx->type);
-        char *pTx = rx->payload.data;
-        for (i=0; i<rx->length-12; i++)
-            printf("%02X-", 0xFF & *(pTx + i));
-        printf("\n");
-*/
         switch (rx->type) {
             case TYPE_DATA:
                 switch (rx->code) {
@@ -304,12 +301,12 @@ int libexf1::usbRx() {
     }
     //else if (bytesRead != -116) {
     else
-        printf("Error: Bulk read failed (usbRx)! %d %s\n", bytesRead, usb_strerror());
+        printf("Error: Bulk read failed (usbRx)! %d %s\n", bytesRead, usbError());
     //}
     return bytesRead;
 }
 
-int libexf1::usbRxToFile(char *fileName) {
+int libexf1::usbRxToFile(const char *fileName) {
 
     FILE *pFile;
     
@@ -320,11 +317,14 @@ int libexf1::usbRxToFile(char *fileName) {
     memset(img, 0, 12); 
 
     do {
-        //while (usbRxEvent() > 0);
 		usbRxEvent();
-        bytesRead = usb_bulk_read(dev, EP_IN, img, IMG_BUF_SIZE, 100);
-        //printf("bytesRead (usbRxToFile): %d\n", bytesRead);
-    } while (bytesRead == -116);
+        usbBulkRead(img, IMG_BUF_SIZE, &bytesRead); 
+    } 
+#if LIBUSB_VER == 1
+	while (bytesRead == 0);
+#else
+	while (bytesRead == -116 || bytesRead == -110);
+#endif
     
     rx = (PTP_CONTAINER *) img;
 
@@ -337,7 +337,7 @@ int libexf1::usbRxToFile(char *fileName) {
                 fwrite(rx->payload.data, 1, bytesRead-12, pFile);
                 printf("> Transferring %d bytes... \n", objectSize);
                 for (bytesRemaining = rx->length - bytesRead; bytesRemaining > 0; bytesRemaining -= bytesRead) {
-                    do bytesRead = usb_bulk_read(dev, EP_IN, img, IMG_BUF_SIZE, TIME_OUT);
+                    do usbBulkRead(img, IMG_BUF_SIZE, &bytesRead);
                     while (bytesRead < 0);
                     fwrite(img, 1, bytesRead, pFile);
                 }
@@ -371,9 +371,14 @@ int libexf1::usbRxToMem(char *jpgImage, int *jpgSize) {
     do {
         //while (usbRxEvent() > 0);
 		usbRxEvent();
-        bytesRead = usb_bulk_read(dev, EP_IN, img, IMG_BUF_SIZE, 50);
+        usbBulkRead(img, IMG_BUF_SIZE, &bytesRead);
         //printf("bytesRead (usbRxToMem): %d\n", bytesRead);
-    } while (bytesRead == -116);
+    } 
+#if LIBUSB_VER == 1
+	while (bytesRead == 0);
+#else
+	while (bytesRead == -116 || bytesRead == -110);
+#endif
 
     rx = (PTP_CONTAINER *) img;
 
@@ -387,13 +392,7 @@ int libexf1::usbRxToMem(char *jpgImage, int *jpgSize) {
 
                 for (bytesRemaining = rx->length - bytesRead; bytesRemaining > 0; bytesRemaining -= bytesRead) {
                     jpgImage += bytesRead;
-                    printf("jpgSize: %d\n",jpgSize); 
-					
-					/*do {
-						usbRxEvent();
-						bytesRead = usb_bulk_read(dev, EP_IN, jpgImage, 512 * ((int)(bytesRemaining/512)+1), 100);
-						//printf("bytesRead (usbRxToMem): %d\n", bytesRead);
-					} while (bytesRead == -116);*/
+                    printf("jpgSize: %d\n",*jpgSize); 
                 }
                 break;
             case TYPE_RESPONSE:
@@ -410,7 +409,7 @@ int libexf1::usbRxToMem(char *jpgImage, int *jpgSize) {
         }
     }
     else if (bytesRead < 0) {
-        printf("Error: Bulk read failed (usbRxToMem)! %d %s\n", bytesRead, usb_strerror());
+        printf("Error: Bulk read failed (usbRxToMem)! %d %s\n", bytesRead, usbError());
         memset(img,0,IMG_BUF_SIZE);
     }
     return bytesRemaining;
@@ -418,27 +417,14 @@ int libexf1::usbRxToMem(char *jpgImage, int *jpgSize) {
 
 int libexf1::usbRxEvent(){
 
-//    char tmpBuffer[16];
-
-    //int bytesRead = usb_interrupt_read(dev, EP_INT, tmp, 24, 5);
-
     int bytesRead = -1;
 
     // Clear tmp buffer.
     memset(tmp, 0, 16);
     rx = (PTP_CONTAINER *) tmp;
 
-	bytesRead = usb_interrupt_read(dev, EP_INT, tmp, 24, 100);
+    usbInterruptRead(tmp, 24, &bytesRead);
 
-	/*
-    // Attempt read.
-    bytesRead = usb_bulk_read(dev, EP_INT, tmp, 16, 20);
-    if (rx->length > bytesRead && bytesRead > 0) {
-        bytesRead += usb_bulk_read(dev, EP_INT, tmp+bytesRead, 16, 20);
-		if (bytesRead != -116 && bytesRead < 0)
-			printf(" Error: interrupt read 2 failed (usbRxEvent): %s %d!\n", usb_strerror(), bytesRead);
-	}
-	*/
     if (bytesRead > 0) {
 
         /*printf("usbRxEvent: 0x%04X 0x%04X ", rx->code, rx->type);
@@ -470,8 +456,12 @@ int libexf1::usbRxEvent(){
         //else
         //    printf("Not an event message!\n");
     }
-    else if (bytesRead != -116)
-        printf(" Error: interrupt read failed (usbRxEvent): %s %d!\n", usb_strerror(), bytesRead);
+#if LIBUSB_VER == 1
+	else if (bytesRead != 0)
+#else
+	else if (bytesRead != -116  && bytesRead != -110)
+#endif
+        printf(" Error: interrupt read failed (usbRxEvent): %s %d!\n", usbError(), bytesRead);
 
     return bytesRead;
 }
@@ -480,11 +470,11 @@ void libexf1::usbGetStatus() {
 
     char statusBytes[2];
     
-    if (usb_control_msg(dev, 0x82, 0x00, 0x00, 0x81, statusBytes, 0x2, TIME_OUT) < 0)
+    if (usbControl(0x82, 0x00, 0x00, 0x81, statusBytes, 2) < 0)
         printf("error: cmd write 1 failed\n");
     //printf("81 status: 0x%02x\n", statusBytes);
 
-    if (usb_control_msg(dev, 0x82, 0x00, 0x00, 0x2, statusBytes, 0x2, TIME_OUT) < 0)
+    if (usbControl(0x82, 0x00, 0x00, 0x2, statusBytes, 2) < 0)
         printf("error: cmd write 2 failed\n");
     //printf("02 status: 0x%02x\n", statusBytes);
 }
@@ -567,7 +557,7 @@ void libexf1::setDeviceInfo(char *pData) {
 
 }
 
-void libexf1::printStringDataSet(char *pDescrition, STRING_DATA_SET *pDataSet) {
+void libexf1::printStringDataSet(const char *pDescrition, STRING_DATA_SET *pDataSet) {
     
     int i;
     printf("%s", pDescrition);
@@ -577,7 +567,7 @@ void libexf1::printStringDataSet(char *pDescrition, STRING_DATA_SET *pDataSet) {
     
 }
 
-void libexf1::printWordDataSet(char *pDescrition, WORD_DATA_SET *pDataSet) {
+void libexf1::printWordDataSet(const char *pDescrition, WORD_DATA_SET *pDataSet) {
 
     DWORD i;
     printf("%s", pDescrition);
@@ -587,7 +577,7 @@ void libexf1::printWordDataSet(char *pDescrition, WORD_DATA_SET *pDataSet) {
 
 }
 
-void libexf1::printDwordDataSet(char *pDescrition, DWORD_DATA_SET *pDataSet) {
+void libexf1::printDwordDataSet(const char *pDescrition, DWORD_DATA_SET *pDataSet) {
 
     DWORD i;
     printf("%s", pDescrition);
@@ -612,7 +602,7 @@ void libexf1::printDeviceInfo() {
 
 }
 
-void libexf1::printEnumDataSet(char *pDescrition, ENUM_FORM *pDataSet, WORD dataType) {
+void libexf1::printEnumDataSet(const char *pDescrition, ENUM_FORM *pDataSet, WORD dataType) {
 
     int i;
     printf("%s", pDescrition);
@@ -928,58 +918,60 @@ void libexf1::printObjectInfo() {
 
 }
 
-int libexf1::usbInit()
+int libexf1::usbStart()
 {
-	//usb_set_debug(3); 
-    usb_init();
-    usb_find_busses();
-    usb_find_devices();
-
-    if(!(dev = open_dev())) {
+    usbInit();
+	//usbSetDebug(255);
+    
+    if(!(dev = openDev())) {
       printf(" Error: camera not found!\n");
       return 0;
     }
 
-    if(usb_set_configuration(dev, 1) < 0) {
+    if(usbSetConfig(1) < 0) {
       printf(" Error: setting config 1. \n");
-      usb_close(dev);
+      usbClose();
       return 0;
     }
 
-    if(usb_claim_interface(dev, 0) < 0) {
+    if(usbClaim(0) < 0) {
       printf(" Error: claiming interface 0 failed. \n");
-      usb_close(dev);
+      usbClose();
       return 0;
     }
 	
     // DeviceReset.
-    if (usb_control_msg(dev, 0x21, 0x66, 0, 0, NULL, 0, TIME_OUT) < 0)
+    if (usbControl(0x21, 0x66, 0, 0, NULL, 0) < 0)
       printf("error: cmd write 1 failed\n");
 
-    usb_resetep(dev, EP_IN);
-    usb_resetep(dev, EP_OUT);
+ //   usbResetEP(EP_IN);
+ //   usbResetEP(EP_OUT);
 
-
-
-    if (usb_clear_halt(dev, EP_IN) < 0)
+    if (usbClearHalt(EP_IN) < 0)
       printf("error: halt clear failed.\n");
 
-    if (usb_clear_halt(dev, EP_OUT) < 0)
+    if (usbClearHalt(EP_OUT) < 0)
       printf("error: halt clear failed.\n");
 
-
-	
     // GetDeviceStatus.
-    if (usb_control_msg(dev, 0xA1, 0x67, 0x00, 0x00, &tmp[0], 4, TIME_OUT) < 0)
+    if (usbControl(0xA1, 0x67, 0x00, 0x00, &tmp[0], 4) < 0)
       printf("error: cmd write 2 failed\n");
 
     //printf("DeviceStatus: 0x%04x...\n", GET_DWORD(tmp));
-	usbRxEvent();
+    usbRxEvent();
     return 1; 
 }
 
-usb_dev_handle* libexf1::open_dev(void)
+usbHandle* libexf1::openDev(void)
 {
+
+#if LIBUSB_VER > 0
+  return libusb_open_device_with_vid_pid(NULL, MY_VID, MY_PID);
+
+#else
+  usb_find_busses();
+  usb_find_devices();    
+    
   struct usb_bus *bus;
   struct usb_device *dev;
 
@@ -995,4 +987,15 @@ usb_dev_handle* libexf1::open_dev(void)
         }
     }
   return NULL;
+#endif  
+}
+
+void libexf1::usbStop(void)
+{
+#if LIBUSB_VER == 0
+  usbReleaseInterface(0);
+  usbReset();
+#endif
+
+  usbClose();
 }

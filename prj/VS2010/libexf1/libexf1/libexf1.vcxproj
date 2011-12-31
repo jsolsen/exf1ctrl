@@ -64,7 +64,7 @@
       </AdditionalDependencies>
     </Link>
     <Lib>
-      <AdditionalDependencies>libjpeg.lib;libusb.lib</AdditionalDependencies>
+      <AdditionalDependencies>libjpeg.lib;libusb.lib;libusb-1.0.lib</AdditionalDependencies>
     </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -89,6 +89,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\src\exf1api.h" />
+    <ClInclude Include="..\..\..\..\src\exf1usb.h" />
     <ClInclude Include="..\..\..\..\src\libexf1.h" />
   </ItemGroup>
   <ItemGroup>

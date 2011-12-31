@@ -296,7 +296,7 @@ int main(int argc, char** argv)
             break; 
             
          case 'm':
-            nargs = sscanf(input, "%c %d %s", &com, &arg, &name);
+            nargs = sscanf(input, "%c %d %s", &com, &arg, name);
             printf("> Recording... \n");
             if (nargs == 3) 
                exf1.movie(strcat(name, ".MOV"), arg);
@@ -313,7 +313,7 @@ int main(int argc, char** argv)
             return 0;    
             
          case 's':
-            nargs = sscanf(input, "%c %s %s %d", &com, &name, &tname, &arg);
+            nargs = sscanf(input, "%c %s %s %d", &com, name, tname, &arg);
             printf("> Taking picture... \n");
             switch (nargs) {
                 case 1: 
@@ -332,7 +332,7 @@ int main(int argc, char** argv)
             break;
 
          case 'v':
-            nargs = sscanf(input, "%c %s %d", &com, &name, &arg);
+            nargs = sscanf(input, "%c %s %d", &com, name, &arg);
             printf("> Focusing... \n");
 
             switch (nargs) {
@@ -371,7 +371,7 @@ int main(int argc, char** argv)
             break;
 
          case 'z':
-            nargs = sscanf(input, "%c %s %d", &com, &name, &arg);
+            nargs = sscanf(input, "%c %s %d", &com, name, &arg);
             printf("> Zooming... \n");
 
             switch (nargs) {

@@ -8,23 +8,13 @@
 #ifndef LIBEXF1_H
 #define	LIBEXF1_H
 
-#include <usb.h>
+#include "exf1usb.h"
 #include <stdio.h>
 #include <stdarg.h>
+#include <string.h>
 
 #define TRUE      1
 #define FALSE     0 
-
-#define MY_VID 0x07CF
-#define MY_PID 0x1023
-
-#define EP_IN 0x81
-#define EP_OUT 0x02
-#define EP_INT 0x83
-
-#define BUF_SIZE 512
-#define IMG_BUF_SIZE		196608 //131072
-#define TIME_OUT			3500
 
 #define WORD                short unsigned int      // 16bits
 #define DWORD               unsigned int            // 32bits
@@ -345,26 +335,27 @@ class libexf1 {
 	};
 	typedef struct _PTP_OBJECT_INFO PTP_OBJECT_INFO;
 
-	usb_dev_handle *open_dev(void);
-
+    usbHandle *openDev(void);
+        
 	void exf1Cmd(WORD cmd, ...);
 	void usbCmdGen(short int cmd, short int postCmdReads, int nCmdParameters, char cmdParameters[]);
 	void usbTx(WORD cmd, WORD cmdType, int nCmdParameterBytes, DWORD cmdParameter1, DWORD cmdParameter2);
 	int usbRx();
-	int usbRxToFile(char *fileName);
+	int usbRxToFile(const char *fileName);
 	int usbRxToMem(char *jpgImage, int *jpgSize);
 	int usbRxEvent(); 
 	void usbGetStatus();
-	int usbInit();
+	int usbStart();
+	void usbStop();
 
-	void printStringDataSet(char *pDescrition, STRING_DATA_SET *pDataSet);
-	void printWordDataSet(char *pDescrition, WORD_DATA_SET *pDataSet);
-	void printDwordDataSet(char *pDescrition, DWORD_DATA_SET *pDataSet);
+	void printStringDataSet(const char *pDescrition, STRING_DATA_SET *pDataSet);
+	void printWordDataSet(const char *pDescrition, WORD_DATA_SET *pDataSet);
+	void printDwordDataSet(const char *pDescrition, DWORD_DATA_SET *pDataSet);
 
 	void setDeviceInfo(char *pData);
 	void printDeviceInfo();
 
-	void printEnumDataSet(char *pDescrition, ENUM_FORM *pDataSet, WORD dataType);
+	void printEnumDataSet(const char *pDescrition, ENUM_FORM *pDataSet, WORD dataType);
 	void setDeviceProperty(char *pData); 
 	void printDeviceProperty();
 
@@ -378,7 +369,8 @@ class libexf1 {
 	void startConfig(char enableStillImage, char enablePreRecord);
 	void stopConfig();
 
-	usb_dev_handle *dev;
+	usbHandle *dev;
+        
 	char tmp[BUF_SIZE];
 	char img[IMG_BUF_SIZE];
 	PTP_DEVICE_INFO deviceInfo;
