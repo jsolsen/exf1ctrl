@@ -8,13 +8,13 @@
 #ifndef EXF1USB_H
 #define	EXF1USB_H
 
-//#define PANDABOARD 1
 #define LIBUSB_VER 0
+//#define PANDABOARD 
 
-#ifdef PANDABOARD 
-    #define CTRL_TIME_OUT			5000
-    #define READ_TIME_OUT			200
-    #define WRITE_TIME_OUT			200
+#ifdef PANDABOARD
+    #define CTRL_TIME_OUT			3500
+    #define READ_TIME_OUT			150
+    #define WRITE_TIME_OUT			150
 #else
     #define CTRL_TIME_OUT			3500
     #define READ_TIME_OUT			100
@@ -35,7 +35,8 @@
 
     #define usbInit()       libusb_init(NULL)
     #define usbSetDebug(x)  libusb_set_debug(NULL, x)
-    #define usbError()      libusb_strerror(LIBUSB_ERROR_NOT_SUPPORTED)
+    #define usbReset()      libusb_reset(dev)
+    #define usbError()      printf("Error\n") //libusb_strerror(LIBUSB_ERROR_NOT_SUPPORTED)
 
     #define usbSetConfig(x) libusb_set_configuration(dev, x)
     #define usbClaim(x)     libusb_claim_interface(dev, x)
@@ -61,13 +62,14 @@
 
     #define usbSetConfig(x) usb_set_configuration(dev, x)
     #define usbClaim(x)     usb_claim_interface(dev, x)
+    #define usbReset()      usb_reset(dev) 
     #define usbResetEP(x)   usb_resetep(dev, x)
     #define usbClearHalt(x) usb_clear_halt(dev, x)
     #define usbClose()      usb_close(dev)
 
-	#define usbReleaseInterface(x) usb_release_interface(dev, x) 
-	#define usbReset()      usb_reset(dev)
-	#define usbClose()      usb_close(dev)
+    #define usbReleaseInterface(x) usb_release_interface(dev, x) 
+    #define usbReset()      usb_reset(dev)
+    #define usbClose()      usb_close(dev)
 
 #endif
 

@@ -12,10 +12,14 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
+#include <stdlib.h>
 
-#define TRUE      1
-#define FALSE     0 
-
+//#ifndef TRUE
+        #define TRUE      1
+//#endif
+//#ifndef FALSE
+        #define FALSE     0 
+//#endif
 #define WORD                short unsigned int      // 16bits
 #define DWORD               unsigned int            // 32bits
 
@@ -370,6 +374,7 @@ class libexf1 {
 	void stopConfig();
 
 	usbHandle *dev;
+        
         
 	char tmp[BUF_SIZE];
 	char img[IMG_BUF_SIZE];

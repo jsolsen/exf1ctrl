@@ -222,7 +222,7 @@ void libexf1::usbTx(WORD cmd, WORD cmdType, int nCmdParameterBytes, DWORD cmdPar
         
 	usbBulkWrite(&tx, packetSize, &bytesTransfered);
     if (bytesTransfered != packetSize)    
-        printf("Error: Bulk write failed for this command: %02X!\n", 0xFFFF & cmd);
+        printf("Error: Bulk write failed for this command: %02X! %d %d %s\n", 0xFFFF & cmd, bytesTransfered, packetSize, usbError());
 
     USB_CMD_ID++;
 }
@@ -921,7 +921,7 @@ void libexf1::printObjectInfo() {
 int libexf1::usbStart()
 {
     usbInit();
-	//usbSetDebug(255);
+    //usbSetDebug(255);
     
     if(!(dev = openDev())) {
       printf(" Error: camera not found!\n");
@@ -940,12 +940,14 @@ int libexf1::usbStart()
       return 0;
     }
 	
+    usbReset();
+    /*
     // DeviceReset.
     if (usbControl(0x21, 0x66, 0, 0, NULL, 0) < 0)
       printf("error: cmd write 1 failed\n");
-
- //   usbResetEP(EP_IN);
- //   usbResetEP(EP_OUT);
+    
+    usbResetEP(EP_IN);
+    usbResetEP(EP_OUT);
 
     if (usbClearHalt(EP_IN) < 0)
       printf("error: halt clear failed.\n");
@@ -954,10 +956,11 @@ int libexf1::usbStart()
       printf("error: halt clear failed.\n");
 
     // GetDeviceStatus.
-    if (usbControl(0xA1, 0x67, 0x00, 0x00, &tmp[0], 4) < 0)
-      printf("error: cmd write 2 failed\n");
+    if (usbControl(0xA1, 0x67, 0x00, 0x00, &tmp[0], 8) < 0)
+      printf("error: cmd write 2 failed: %s\n", usbError());
 
     //printf("DeviceStatus: 0x%04x...\n", GET_DWORD(tmp));
+*/
     usbRxEvent();
     return 1; 
 }

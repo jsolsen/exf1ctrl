@@ -10,8 +10,10 @@ exf1api::exf1api()
 
 int exf1api::initCamera(void)
 {
-    if (lib.usbStart() == 0)
+    if (lib.usbStart() == 0) {
+        printf("usbStart failed!\n");
         exit(0);
+        }
 
     // Print out device info.
     //exf1Cmd(CMD_GET_DEVICE_INFO);
@@ -106,7 +108,7 @@ void exf1api::shutter(const char *fileName, const char *thumbNail, int delay)
 #ifdef WIN32
             Sleep(1000 * delay);
 #else
-			usleep(1000 * delay);
+			usleep(1000000 * delay);
 #endif
         else
             printf("> Press enter to stop recording... "), getchar();
@@ -270,7 +272,7 @@ void exf1api::movie(const char *fileName, int delay)
 #ifdef WIN32
 		Sleep(1000 * delay);
 #else
-		usleep(1000 * delay);
+		usleep(1000000 * delay);
 #endif
     else
 	{
