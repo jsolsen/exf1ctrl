@@ -1,5 +1,5 @@
 //
-// ExF1Ctrl ver. 0.1. 
+// ExF1Ctrl ver. 0.2. 
 //
 // This program illustrates how to build a simple timelapse application that controls the Casio EXF1. 
 // Firmware rev. 2.00 is required. This version is available here:

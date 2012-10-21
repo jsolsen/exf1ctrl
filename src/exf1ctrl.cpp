@@ -1,5 +1,5 @@
 //
-// ExF1Ctrl ver. 0.1. 
+// ExF1Ctrl ver. 0.2. 
 //
 // This program can be used to interface the Casio EX-F1 over USB. 
 // Firmware rev. 2.00 is required. This version is available here:
@@ -19,7 +19,7 @@ int main(int argc, char** argv)
    printf(" \n");
    printf(" ********************************************************************\n");
    printf(" *                                                                  *\n");
-   printf(" *  ExF1Ctrl ver. 0.1                                               *\n");
+   printf(" *  ExF1Ctrl ver. 0.2                                               *\n");
    printf(" *  -----------------                                               *\n");
    printf(" *  This program is able to interface to the Casio EX-F1 over USB.  *\n");
    printf(" *  Firmware rev. 2.00 is required and the camera must be put in    *\n");
