@@ -940,8 +940,8 @@ int libexf1::usbStart()
       return 0;
     }
 	
-    usbReset();
-    /*
+//    usbReset();
+/*
     // DeviceReset.
     if (usbControl(0x21, 0x66, 0, 0, NULL, 0) < 0)
       printf("error: cmd write 1 failed\n");

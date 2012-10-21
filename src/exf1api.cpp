@@ -235,11 +235,24 @@ void exf1api::setupExposureValue(EV exposureValue)
     startConfig(stillImageEnabled, preRecordEnabled);
 }
 
+void exf1api::setupFlash(WORD flash)
+{
+    stopConfig();
+    lib.exf1Cmd(CMD_WRITE, ADDR_FLASH, flash);
+    startConfig(stillImageEnabled, preRecordEnabled);
+}
 
 void exf1api::setupFocus(WORD focus)
 {
     stopConfig();
     lib.exf1Cmd(CMD_WRITE, ADDR_FOCUS, focus);
+    startConfig(stillImageEnabled, preRecordEnabled);
+}
+
+void exf1api::setupShutterSpeed(WORD shutterSpeed)
+{
+    stopConfig();
+    lib.exf1Cmd(CMD_WRITE, ADDR_SHUTTER_SPEED, shutterSpeed);
     startConfig(stillImageEnabled, preRecordEnabled);
 }
 

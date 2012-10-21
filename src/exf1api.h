@@ -41,6 +41,7 @@ class exf1api {
 
 	void setupMovie(MOVIE_MODES movieMode, char enablePreRecord);
 	void setupShutter(SHUTTER_MODES shutterMode, char enablePreRecord);
+	void setupShutterSpeed(WORD shutterSpeed);
 
 	void movie(const char *filename, int delay);
 	void setupMonitor(char isPc);
@@ -49,6 +50,7 @@ class exf1api {
 	void setupAperture(WORD aperture);
 	void setupExposure(WORD exposure);
 	void setupExposureValue(EV exposureValue);
+	void setupFlash(WORD flash);
 	void setupFocus(WORD focus);
 
 	void zoom(char zoomIn, char continousZoom);

@@ -80,6 +80,18 @@ int main(int argc, char** argv)
    printf("          5: 800.\n");
    printf("          6: 1600.\n");
    printf("\n");
+   printf(" Hint: l [x] sets flash mode (x = 1-4).\n");
+   printf("          1: Auto (default).\n");	
+   printf("          2: Off.\n");
+   printf("          3: On.\n");
+   printf("          4: External.\n");
+   printf("\n");
+   printf(" Hint: p [x] sets shutter speed (x = 1-64). Exposure must be set to manual.\n");
+   printf("          1: 60.\n");	
+   printf("          2: 50.\n");
+   printf("          ...\n");
+   printf("          64: 1/40000.\n");
+   printf("\n");
    printf(" Hint: q quits this program.\n");
    printf("\n");
    printf(" Hint: m [x [y]] records a x second long movie called y.\n");
@@ -294,7 +306,28 @@ int main(int argc, char** argv)
                  printf("> Unknown ISO setting. \n");
             }
             break; 
-            
+ 
+          case 'l':
+            nargs = sscanf(input, "%c %d", &com, &arg);
+            printf("> Configuring flash mode... \n");
+            switch (arg) {
+               case 1:
+                 exf1.setupFlash(DATA_FLASH_AUTO);
+                 break;
+               case 2:
+                 exf1.setupFlash(DATA_FLASH_OFF);
+                 break;
+               case 3:
+                 exf1.setupFlash(DATA_FLASH_ON);
+                 break;
+               case 4:
+                 exf1.setupFlash(DATA_FLASH_EXTERNAL);
+                 break;
+               default:
+                 printf("> Unknown flash setting. \n");
+            }
+            break;
+
          case 'm':
             nargs = sscanf(input, "%c %d %s", &com, &arg, name);
             printf("> Recording... \n");
@@ -305,7 +338,16 @@ int main(int argc, char** argv)
             else 
                exf1.movie("CIMG001.MOV", -1);
             break; 
-            
+       
+          case 'p':
+            nargs = sscanf(input, "%c %d", &com, &arg);
+            printf("> Configuring shutter speed... \n");
+			if (arg > 0 && arg < 65)
+				exf1.setupShutterSpeed(arg);
+			else
+                printf("> Unknown shutter speed setting. \n");
+            break;
+
          case 'q':
             exf1.exitCamera();
             printf("> Bye! \n");
